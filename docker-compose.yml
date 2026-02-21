@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: agenda_postgres
+    environment:
+      POSTGRES_DB: agenda_db
+      POSTGRES_USER: agenda_user
+      POSTGRES_PASSWORD: agenda_pass
+    ports:
+      - "5435:5432"
+    volumes:
+      - agenda_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenda_user -d agenda_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  agenda_pgdata:

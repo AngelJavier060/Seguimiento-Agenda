@@ -1,70 +1,81 @@
-# Getting Started with Create React App
+# Agenda de Cumplimiento — Full-Stack
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema de seguimiento de actividades con backend Spring Boot + PostgreSQL y frontend Angular.
 
-## Available Scripts
+## 🗂️ Estructura del Proyecto
 
-In the project directory, you can run:
+```
+Seguimiento-Agenda/
+├── backend/          # Spring Boot 3 + PostgreSQL
+│   └── src/main/java/com/agenda/backend/
+│       ├── entity/       # Actividad, AlertaConfig, Notificacion, TelegramConfig
+│       ├── repository/   # JPA Repositories
+│       ├── service/      # Lógica de negocio + schedulers Telegram
+│       ├── controller/   # REST API /api/v1/...
+│       ├── dto/          # Request/Response DTOs
+│       └── config/       # CORS, GlobalExceptionHandler
+├── frontend/         # Angular 19 (standalone)
+│   └── src/app/
+│       ├── core/         # Models, Services (Actividad, Alerta, Telegram, Toast)
+│       └── features/     # Agenda, Dashboard, Reportes, Alertas
+└── docker-compose.yml  # PostgreSQL 15
+```
 
-### `npm start`
+## 🚀 Inicio Rápido
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. Levantar la base de datos
+```bash
+docker-compose up -d
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Iniciar el backend
+```bash
+cd backend
+mvn spring-boot:run
+```
+> API disponible en: http://localhost:8080/api/v1
 
-### `npm test`
+### 3. Iniciar el frontend
+```bash
+cd frontend
+ng serve
+```
+> App disponible en: http://localhost:4200
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🔑 API Endpoints
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/actividades` | Listar todas las actividades |
+| POST | `/api/v1/actividades` | Crear nueva actividad |
+| PUT | `/api/v1/actividades/{id}` | Actualizar actividad |
+| PUT | `/api/v1/actividades/{id}/completar` | Marcar como completada |
+| DELETE | `/api/v1/actividades/{id}` | Eliminar actividad |
+| GET | `/api/v1/actividades/stats` | Estadísticas globales |
+| GET/PUT | `/api/v1/telegram/config` | Configuración Telegram |
+| POST | `/api/v1/telegram/test` | Probar conexión Telegram |
+| POST | `/api/v1/reportes/{tipo}` | Enviar reporte (daily/weekly/monthly) |
+| GET | `/api/v1/alertas` | Configuración de alertas |
+| PUT | `/api/v1/alertas/{id}` | Habilitar/deshabilitar alerta |
+| GET | `/api/v1/notificaciones` | Historial de notificaciones |
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ⚙️ Configuración de Telegram
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Edita `backend/src/main/resources/application.properties` o configura variables de entorno:
+```
+TELEGRAM_BOT_TOKEN=tu_token_del_bot
+TELEGRAM_CHAT_ID=tu_chat_id
+```
 
-### `npm run eject`
+O configúralo desde la UI en la pestaña **Reportes** del frontend.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🗄️ Base de Datos (PostgreSQL)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Parámetro | Valor |
+|-----------|-------|
+| Host | localhost:5432 |
+| DB | agenda_db |
+| Usuario | agenda_user |
+| Contraseña | agenda_pass |
