@@ -97,11 +97,11 @@ import { ActividadService } from '../../core/services/actividad.service';
             <thead>
               <tr>
                 <th>USUARIO</th><th>ACTIVIDAD</th><th>ÁREA</th><th>PRIORIDAD</th>
-                <th>FECHA LÍMITE</th><th>ESTADO</th>
+                <th>FECHA LÍMITE</th><th>ESTADO</th><th style="width:100px">ACCIONES</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="filteredAllActividades().length === 0"><td colspan="6">
+              <tr *ngIf="filteredAllActividades().length === 0"><td colspan="7">
                 <div class="empty-state"><div class="icon">📭</div><p>No hay actividades para mostrar</p></div>
               </td></tr>
               <tr *ngFor="let t of filteredAllActividades()">
@@ -111,9 +111,54 @@ import { ActividadService } from '../../core/services/actividad.service';
                 <td><span class="inline-badge" [ngStyle]="{'background': t.prioridad==='alta' ? '#ef4444' : t.prioridad==='media' ? '#f59e0b' : '#22c55e', 'color': '#fff'}">{{ t.prioridad }}</span></td>
                 <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ formatDate(t.fechaLimite) }}</td>
                 <td><span class="badge" [ngClass]="{'badge-green': t.estado==='done', 'badge-amber': t.estado==='pending', 'badge-red': t.estado==='overdue'}">{{ estadoLabel(t.estado) }}</span></td>
+                <td class="actions">
+                  <button class="action-btn" title="Editar" (click)="editActividad(t)">✏️</button>
+                  <button class="action-btn delete" title="Eliminar" (click)="deleteActividad(t)">🗑️</button>
+                </td>
               </tr>
             </tbody>
           </table>
+
+          <!-- Modal editar actividad -->
+          <div *ngIf="editingActividad" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000" (click)="cancelEditActividad()">
+            <div class="modal" style="width:480px;padding:24px;border-radius:16px" (click)="$event.stopPropagation()">
+              <h2 style="margin-bottom:16px;font-size:18px">✏️ Editar Actividad</h2>
+              <div style="display:grid;gap:12px">
+                <div>
+                  <label style="display:block;font-size:13px;margin-bottom:4px">Nombre</label>
+                  <input class="form-control" [(ngModel)]="editActForm.nombre" name="editActNombre">
+                </div>
+                <div>
+                  <label style="display:block;font-size:13px;margin-bottom:4px">Descripción</label>
+                  <input class="form-control" [(ngModel)]="editActForm.descripcion" name="editActDesc">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px">Prioridad</label>
+                    <select class="form-control" [(ngModel)]="editActForm.prioridad" name="editActPrioridad">
+                      <option value="alta">Alta</option>
+                      <option value="media">Media</option>
+                      <option value="baja">Baja</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px">Área</label>
+                    <select class="form-control" [(ngModel)]="editActForm.area" name="editActArea">
+                      <option *ngFor="let a of areas" [value]="a.nombre">{{ a.nombre }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:13px;margin-bottom:4px">Fecha límite</label>
+                  <input class="form-control" type="datetime-local" [(ngModel)]="editActForm.fechaLimite" name="editActFecha">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+                  <button class="btn btn-ghost" (click)="cancelEditActividad()">Cancelar</button>
+                  <button class="btn btn-primary" (click)="saveEditActividad()">Guardar</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -286,6 +331,9 @@ export class AdminConfigComponent implements OnInit {
   globalStats: Estadisticas | null = null;
   actividadSearch = '';
   actividadFiltroEstado = 'all';
+  // Edición de actividad
+  editingActividad: Actividad | null = null;
+  editActForm: any = { nombre: '', descripcion: '', prioridad: 'media', area: '', fechaLimite: '' };
 
   constructor(
     private admin: AdminService,
@@ -423,6 +471,57 @@ export class AdminConfigComponent implements OnInit {
   estadoLabel(estado: string) {
     const m: Record<string, string> = { done: 'Completada', pending: 'Pendiente', overdue: 'Vencida' };
     return m[estado] || estado;
+  }
+
+  // Editar actividad desde admin
+  editActividad(t: Actividad) {
+    this.editingActividad = t;
+    // Convertir fechaLimite a formato datetime-local (YYYY-MM-DDTHH:mm)
+    let fl = t.fechaLimite || '';
+    if (fl && fl.length > 16) fl = fl.substring(0, 16);
+    this.editActForm = {
+      nombre: t.nombre,
+      descripcion: t.descripcion || '',
+      prioridad: t.prioridad,
+      area: t.area,
+      fechaLimite: fl
+    };
+  }
+
+  cancelEditActividad() {
+    this.editingActividad = null;
+  }
+
+  saveEditActividad() {
+    if (!this.editingActividad) return;
+    const id = this.editingActividad.id;
+    const req: any = {
+      nombre: this.editActForm.nombre,
+      descripcion: this.editActForm.descripcion,
+      prioridad: this.editActForm.prioridad,
+      area: this.editActForm.area,
+      fechaLimite: this.editActForm.fechaLimite
+    };
+    this.actividadSvc.actualizar(id, req).subscribe({
+      next: () => {
+        this.toast.show('Actividad actualizada');
+        this.editingActividad = null;
+        this.loadAllActividades();
+      },
+      error: err => this.toast.show(err?.error?.message || 'No se pudo actualizar la actividad', 'error')
+    });
+  }
+
+  deleteActividad(t: Actividad) {
+    const owner = t.usuario?.nombre || t.usuario?.username || 'Sin asignar';
+    if (!confirm(`¿Eliminar la actividad "${t.nombre}" de ${owner}?`)) return;
+    this.actividadSvc.eliminar(t.id).subscribe({
+      next: () => {
+        this.toast.show('Actividad eliminada');
+        this.loadAllActividades();
+      },
+      error: err => this.toast.show(err?.error?.message || 'No se pudo eliminar la actividad', 'error')
+    });
   }
 
   irAgenda() {
