@@ -7,6 +7,7 @@ import com.agenda.backend.service.ActividadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequestMapping("/api/v1/actividades")
 @CrossOrigin("*")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('USER')")
 public class ActividadController {
 
     private final ActividadService service;

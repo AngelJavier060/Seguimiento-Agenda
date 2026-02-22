@@ -4,6 +4,7 @@ import com.agenda.backend.entity.TelegramConfig;
 import com.agenda.backend.service.TelegramService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/telegram")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class TelegramController {
 
     private final TelegramService service;
@@ -37,9 +39,9 @@ public class TelegramController {
 
     @PostMapping("/test")
     public ResponseEntity<Map<String, Object>> test() {
-        boolean ok = service.testConexion();
+        boolean ok = service.enviarMensaje("🧪 Prueba de notificación desde AgendaPro", "TEST");
         return ResponseEntity.ok(Map.of(
                 "exitoso", ok,
-                "mensaje", ok ? "✅ Conexión exitosa con Telegram" : "❌ No se pudo conectar con Telegram"));
+                "mensaje", ok ? "✅ Mensaje de prueba enviado" : "❌ No se pudo enviar el mensaje de prueba"));
     }
 }

@@ -15,10 +15,10 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
 
     List<Actividad> findByPrioridad(Actividad.Prioridad prioridad);
 
-    @Query("SELECT a FROM Actividad a WHERE a.estado <> 'done' AND a.fechaLimite < :now")
+    @Query("SELECT a FROM Actividad a WHERE a.estado NOT IN ('done','cancelled') AND a.fechaLimite < :now")
     List<Actividad> findOverdue(LocalDateTime now);
 
-    @Query("SELECT a FROM Actividad a WHERE a.estado <> 'done' AND a.fechaLimite BETWEEN :start AND :end")
+    @Query("SELECT a FROM Actividad a WHERE a.estado NOT IN ('done','cancelled') AND a.fechaLimite BETWEEN :start AND :end")
     List<Actividad> findDueBetween(LocalDateTime start, LocalDateTime end);
 
     long countByEstado(Actividad.EstadoActividad estado);

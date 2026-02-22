@@ -38,22 +38,28 @@ public class TelegramService {
         TelegramConfig cfg = getConfig();
         if (!cfg.isActivo() || cfg.getBotToken() == null || cfg.getBotToken().isBlank()) {
             log.warn("Telegram no configurado o inactivo. Mensaje no enviado: {}", tipo);
-            guardarNotificacion(tipo, mensaje, cfg.getChatId(), "❌ No enviado");
+            guardarNotificacion(tipo, mensaje, resolveDestinatario(cfg), "❌ No enviado");
             return false;
         }
         try {
             String encodedMsg = URLEncoder.encode(mensaje, StandardCharsets.UTF_8);
+            String chat = resolveChatId(cfg);
+            if (chat == null || chat.isBlank()) {
+                log.warn("Telegram sin destino (user/channel o chatId vacío). No se envía: {}", tipo);
+                guardarNotificacion(tipo, mensaje, resolveDestinatario(cfg), "❌ No enviado (sin destino)");
+                return false;
+            }
             String url = "https://api.telegram.org/bot" + cfg.getBotToken()
-                    + "/sendMessage?chat_id=" + cfg.getChatId()
+                    + "/sendMessage?chat_id=" + chat
                     + "&text=" + encodedMsg + "&parse_mode=HTML";
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             boolean ok = response.statusCode() == 200;
-            guardarNotificacion(tipo, mensaje, cfg.getChatId(), ok ? "✅ Enviado" : "❌ Error " + response.statusCode());
+            guardarNotificacion(tipo, mensaje, resolveDestinatario(cfg), ok ? "✅ Enviado" : "❌ Error " + response.statusCode());
             return ok;
         } catch (Exception e) {
             log.error("Error enviando mensaje Telegram: {}", e.getMessage());
-            guardarNotificacion(tipo, mensaje, cfg.getChatId(), "❌ Error: " + e.getMessage());
+            guardarNotificacion(tipo, mensaje, resolveDestinatario(cfg), "❌ Error: " + e.getMessage());
             return false;
         }
     }
@@ -77,5 +83,18 @@ public class TelegramService {
                 .tipo(tipo).mensaje(mensaje)
                 .destinatario(destinatario != null ? destinatario : "N/A")
                 .estadoEnvio(estado).build());
+    }
+
+    private String resolveChatId(TelegramConfig cfg) {
+        // Prefer user/channel if provided, else chatId
+        if (cfg.getUserOrChannel() != null && !cfg.getUserOrChannel().isBlank()) return cfg.getUserOrChannel();
+        if (cfg.getChatId() != null && !cfg.getChatId().isBlank()) return cfg.getChatId();
+        return ""; // No enviar por número telefónico: Bot API no soporta phone como chat_id
+    }
+
+    private String resolveDestinatario(TelegramConfig cfg) {
+        if (cfg.getUserOrChannel() != null && !cfg.getUserOrChannel().isBlank()) return cfg.getUserOrChannel();
+        if (cfg.getChatId() != null && !cfg.getChatId().isBlank()) return cfg.getChatId();
+        return cfg.getPhoneNumber() != null && !cfg.getPhoneNumber().isBlank() ? cfg.getPhoneNumber() : "N/A";
     }
 }

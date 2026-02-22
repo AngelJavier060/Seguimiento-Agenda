@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AlertaService } from '../../core/services/alerta.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AlertaConfig, Notificacion } from '../../core/models/models';
+import { AuthService } from '../../core/services/auth.service';
 
 const ALERTA_META: Record<string, { title: string; desc: string }> = {
   ALERTA_PROXIMA: { title: '⚠️ Alerta: Tarea próxima a vencer', desc: 'Notificación 24 horas antes del vencimiento de cada tarea' },
@@ -23,7 +24,7 @@ const ALERTA_META: Record<string, { title: string; desc: string }> = {
       <h1>Alertas y <span>Notificaciones</span></h1>
     </header>
     <main class="main">
-      <div class="progress-section" style="margin-bottom:24px">
+      <div class="progress-section" style="margin-bottom:24px" *ngIf="auth.isAdmin()">
         <div class="progress-title" style="margin-bottom:20px">Configuración de Alertas Automáticas</div>
         @for (alerta of alertas(); track alerta.id) {
           <div class="alert-config">
@@ -69,14 +70,17 @@ export class AlertasComponent implements OnInit {
   alertas = signal<AlertaConfig[]>([]);
   notificaciones = signal<Notificacion[]>([]);
 
-  constructor(private svc: AlertaService, private toast: ToastService) { }
+  constructor(private svc: AlertaService, private toast: ToastService, public auth: AuthService) { }
 
   ngOnInit() {
-    this.svc.listarAlertas().subscribe(a => this.alertas.set(a));
+    if (this.auth.isAdmin()) {
+      this.svc.listarAlertas().subscribe(a => this.alertas.set(a));
+    }
     this.svc.listarNotificaciones().subscribe(n => this.notificaciones.set(n));
   }
 
   toggleAlerta(alerta: AlertaConfig) {
+    if (!this.auth.isAdmin()) return;
     this.svc.actualizarAlerta(alerta.id, !alerta.habilitada).subscribe({
       next: updated => {
         this.alertas.update(list => list.map(a => a.id === updated.id ? updated : a));

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -42,6 +44,15 @@ public class ActividadService {
                 .area(req.getArea())
                 .estado(calcularEstado(req.getFechaLimite(), null))
                 .build();
+        // Recurrencia (si viene)
+        a.setRecurrente(Boolean.TRUE.equals(req.getRecurrente()));
+        a.setRecDiaMes(req.getRecDiaMes());
+        a.setRecUltimoDia(req.getRecUltimoDia());
+        a.setRecHora(req.getRecHora());
+        a.setRecMeses(req.getRecMeses());
+        a.setRecGenerados(0);
+        a.setRecNextGenerated(false);
+        addLog(a, "Creada el " + LocalDateTime.now());
         return repo.save(a);
     }
 
@@ -56,6 +67,13 @@ public class ActividadService {
         if (a.getEstado() != EstadoActividad.done) {
             a.setEstado(calcularEstado(req.getFechaLimite(), a.getEstado()));
         }
+        // Recurrencia
+        a.setRecurrente(Boolean.TRUE.equals(req.getRecurrente()));
+        a.setRecDiaMes(req.getRecDiaMes());
+        a.setRecUltimoDia(req.getRecUltimoDia());
+        a.setRecHora(req.getRecHora());
+        a.setRecMeses(req.getRecMeses());
+        addLog(a, "Editada el " + LocalDateTime.now());
         return repo.save(a);
     }
 
@@ -63,7 +81,12 @@ public class ActividadService {
     public Actividad completar(Long id) {
         Actividad a = obtenerPorId(id);
         a.setEstado(EstadoActividad.done);
-        return repo.save(a);
+        a.setFechaFinalizacion(LocalDateTime.now());
+        addLog(a, "Completada el " + a.getFechaFinalizacion());
+        repo.save(a);
+        // Generar siguiente ocurrencia si aplica
+        generarSiguienteOcurrencia(a, true);
+        return a;
     }
 
     @Transactional
@@ -102,10 +125,19 @@ public class ActividadService {
     @Scheduled(fixedDelay = 60_000)
     @Transactional
     public void sincronizarVencidas() {
-        List<Actividad> overdue = repo.findOverdue(LocalDateTime.now());
-        overdue.forEach(a -> a.setEstado(EstadoActividad.overdue));
-        if (!overdue.isEmpty())
-            repo.saveAll(overdue);
+        LocalDateTime now = LocalDateTime.now();
+        List<Actividad> overdue = repo.findOverdue(now);
+        for (Actividad a : overdue) {
+            if (a.getEstado() == EstadoActividad.done) continue;
+            a.setEstado(EstadoActividad.overdue);
+            addLog(a, "Vencida automáticamente el " + now);
+            // Si es recurrente y aún no se generó la siguiente, generar
+            if (Boolean.TRUE.equals(a.getRecurrente()) && !Boolean.TRUE.equals(a.getRecNextGenerated())) {
+                generarSiguienteOcurrencia(a, false);
+                a.setRecNextGenerated(true);
+            }
+        }
+        if (!overdue.isEmpty()) repo.saveAll(overdue);
     }
 
     // ── HELPERS ───────────────────────────────────────────
@@ -116,5 +148,56 @@ public class ActividadService {
         return fechaLimite.isBefore(LocalDateTime.now())
                 ? EstadoActividad.overdue
                 : EstadoActividad.pending;
+    }
+
+    // ── Recurrencia helpers ───────────────────────────────
+    private void addLog(Actividad a, String msg) {
+        if (a.getHistorial() != null) a.getHistorial().add(msg);
+    }
+
+    private LocalDateTime calcularSiguienteFecha(Actividad a) {
+        LocalDateTime base = a.getFechaLimite() != null ? a.getFechaLimite() : LocalDateTime.now();
+        LocalDateTime nextBase = base.plusMonths(1);
+        YearMonth ym = YearMonth.of(nextBase.getYear(), nextBase.getMonth());
+        int day;
+        if (Boolean.TRUE.equals(a.getRecUltimoDia())) {
+            day = ym.lengthOfMonth();
+        } else {
+            int d = a.getRecDiaMes() != null ? a.getRecDiaMes() : 1;
+            day = Math.min(d, ym.lengthOfMonth());
+        }
+        LocalTime hora = a.getRecHora() != null ? a.getRecHora() : LocalTime.of(8, 0);
+        return LocalDateTime.of(ym.getYear(), ym.getMonth(), day, hora.getHour(), hora.getMinute());
+    }
+
+    private void generarSiguienteOcurrencia(Actividad a, boolean porCompletar) {
+        if (!Boolean.TRUE.equals(a.getRecurrente())) return;
+        Integer limite = a.getRecMeses();
+        int generadosPrev = a.getRecGenerados() != null ? a.getRecGenerados() : 0;
+        if (limite != null && limite > 0 && generadosPrev >= limite) {
+            addLog(a, "Recurrencia finalizada");
+            return;
+        }
+        LocalDateTime siguienteFecha = calcularSiguienteFecha(a);
+        Actividad b = Actividad.builder()
+                .nombre(a.getNombre())
+                .descripcion(a.getDescripcion())
+                .fechaLimite(siguienteFecha)
+                .prioridad(a.getPrioridad())
+                .area(a.getArea())
+                .estado(EstadoActividad.pending)
+                .build();
+        // Copiar configuración de recurrencia
+        b.setRecurrente(true);
+        b.setRecDiaMes(a.getRecDiaMes());
+        b.setRecUltimoDia(a.getRecUltimoDia());
+        b.setRecHora(a.getRecHora());
+        b.setRecMeses(a.getRecMeses());
+        b.setRecGenerados(generadosPrev + 1);
+        b.setRecNextGenerated(false);
+        addLog(a, "Generada automáticamente la siguiente ocurrencia #" + (generadosPrev + 1) + " para el " + siguienteFecha);
+        addLog(b, "Ocurrencia #" + (generadosPrev + 1) + " creada a partir de tarea previa");
+        repo.save(b);
+        a.setRecNextGenerated(true);
     }
 }

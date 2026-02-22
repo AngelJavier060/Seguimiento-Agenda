@@ -3,6 +3,7 @@ package com.agenda.backend.controller;
 import com.agenda.backend.entity.AlertaConfig;
 import com.agenda.backend.service.AlertaConfigService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/alertas")
 @CrossOrigin("*")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AlertaController {
 
     private final AlertaConfigService service;

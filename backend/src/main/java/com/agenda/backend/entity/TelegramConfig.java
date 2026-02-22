@@ -24,4 +24,10 @@ public class TelegramConfig {
 
     @Column(nullable = false)
     private boolean activo;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "user_or_channel")
+    private String userOrChannel; // e.g. @canal o @usuario
 }

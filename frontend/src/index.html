@@ -8,6 +8,30 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script id="tailwind-config">
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#137fec',
+            'background-light': '#f6f7f8',
+            'background-dark': '#101922',
+          },
+          fontFamily: {
+            display: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            DEFAULT: '0.25rem',
+            lg: '0.5rem',
+            xl: '0.75rem',
+            full: '9999px',
+          },
+        }
+      }
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <style type="text/tailwindcss">
     :root {
@@ -21,7 +45,22 @@
       --border-subtle: rgba(255, 255, 255, 0.06);
       --glass-bg: rgba(255, 255, 255, 0.03);
     }
+    :root[data-theme='light'] {
+      --bg-deep: #f6f7f8;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --glass-bg: rgba(255,255,255,0.65);
+      /* legacy variables used in styles.css */
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface2: #f3f4f6;
+      --border: #e5e7eb;
+      --text: #0f172a;
+      --muted: #6b7280;
+    }
     body { font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: #e2e8f0; }
+    html[data-theme='light'] body { color: #0f172a; }
     .heading-font { font-family: 'Playfair Display', serif; }
     .glass-effect { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-subtle); }
     .sidebar-item-active { background: linear-gradient(90deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0) 100%); border-left: 3px solid var(--accent-emerald); }

@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface AlertaConfigRepository extends JpaRepository<AlertaConfig, Long> {
     Optional<AlertaConfig> findByTipo(AlertaConfig.TipoAlerta tipo);
+    long countByHabilitada(boolean habilitada);
 }

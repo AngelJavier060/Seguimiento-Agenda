@@ -10,6 +10,16 @@ export interface Actividad {
     area: string;
     estado: EstadoActividad;
     fechaCreacion?: string;
+    fechaFinalizacion?: string | null;
+    // Recurrencia (opcionales)
+    recurrente?: boolean;
+    recDiaMes?: number | null;
+    recUltimoDia?: boolean | null;
+    recHora?: string | null; // HH:mm[:ss]
+    recMeses?: number | null;
+    recGenerados?: number | null;
+    recNextGenerated?: boolean | null;
+    historial?: string[];
 }
 
 export interface ActividadRequest {
@@ -18,6 +28,12 @@ export interface ActividadRequest {
     fechaLimite: string;
     prioridad: Prioridad;
     area: string;
+    // Recurrencia (opcionales)
+    recurrente?: boolean;
+    recDiaMes?: number | null;
+    recUltimoDia?: boolean | null;
+    recHora?: string | null; // HH:mm:ss
+    recMeses?: number | null;
 }
 
 export interface Estadisticas {
@@ -51,4 +67,11 @@ export interface TelegramConfig {
     chatId: string;
     botToken: string;
     activo: boolean;
+    phoneNumber?: string;
+    userOrChannel?: string; // @usuario o @canal
+}
+
+export interface AreaCategoria {
+    id: number;
+    nombre: string;
 }
