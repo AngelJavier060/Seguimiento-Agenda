@@ -1,5 +1,6 @@
 package com.agenda.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +23,12 @@ public class Actividad {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Relación con el usuario dueño de la actividad
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    @JsonIgnoreProperties({"password", "hibernateLazyInitializer", "handler"})
+    private Usuario usuario;
 
     @NotBlank
     @Column(nullable = false)

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TelegramService } from '../../core/services/alerta.service';
@@ -9,7 +9,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AreaService } from '../../core/services/area.service';
-import { AreaCategoria } from '../../core/models/models';
+import { AreaCategoria, Actividad, Estadisticas } from '../../core/models/models';
+import { ActividadService } from '../../core/services/actividad.service';
 
 @Component({
   selector: 'app-admin-config',
@@ -18,12 +19,16 @@ import { AreaCategoria } from '../../core/models/models';
   template: `
   <header class="topbar" style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Panel de <span>Administración</span></h1>
-    <button class="btn btn-ghost" style="color:#ef4444;border:1px solid #ef4444;padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="salir()">Salir</button>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn btn-primary" style="padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="irAgenda()">📋 Mi Agenda</button>
+      <button class="btn btn-ghost" style="color:#ef4444;border:1px solid #ef4444;padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="salir()">Salir</button>
+    </div>
   </header>
   <main class="main">
     <div class="max-w-6xl mx-auto">
       <div class="flex gap-2 mb-4">
         <button class="btn btn-ghost" [class.nav-item]="false" [class.active]="activeTab==='inicio'" (click)="setTab('inicio')">Inicio</button>
+        <button class="btn btn-ghost" [class.active]="activeTab==='actividades'" (click)="setTab('actividades')">📋 Actividades</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='login'" (click)="setTab('login')">Login</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='temas'" (click)="setTab('temas')">Temas</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='config'" (click)="setTab('config')">Configuración</button>
@@ -52,6 +57,64 @@ import { AreaCategoria } from '../../core/models/models';
             <div class="stat-value red">JWT</div>
             <div class="stat-sub">Sesiones sin estado</div>
           </div>
+        </div>
+      </section>
+
+      <!-- Actividades: Vista global de todos los usuarios -->
+      <section *ngIf="activeTab==='actividades'">
+        <div class="stats-row" style="margin-bottom:16px">
+          <div class="stat-card green">
+            <div class="stat-label">Completadas</div>
+            <div class="stat-value green">{{ globalStats?.completadas ?? 0 }}</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value amber">{{ globalStats?.pendientes ?? 0 }}</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Vencidas</div>
+            <div class="stat-value red">{{ globalStats?.vencidas ?? 0 }}</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Cumplimiento</div>
+            <div class="stat-value blue">{{ globalStats?.cumplimientoPct ?? 0 }}%</div>
+          </div>
+        </div>
+        <div class="filters" style="margin-bottom:12px">
+          <input class="search-input" type="text" placeholder="🔍 Buscar actividad o usuario..." [(ngModel)]="actividadSearch" name="actividadSearch">
+          <select class="sort-select" [(ngModel)]="actividadFiltroEstado" name="actividadFiltroEstado">
+            <option value="all">Todos los estados</option>
+            <option value="pending">⏳ Pendientes</option>
+            <option value="overdue">⚠️ Vencidas</option>
+            <option value="done">✅ Completadas</option>
+          </select>
+        </div>
+        <div class="task-section">
+          <div class="task-section-header">
+            <span class="task-section-title">📋 Todas las Actividades</span>
+            <span class="task-count">{{ filteredAllActividades().length }} de {{ allActividades.length }} tareas</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>USUARIO</th><th>ACTIVIDAD</th><th>ÁREA</th><th>PRIORIDAD</th>
+                <th>FECHA LÍMITE</th><th>ESTADO</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="filteredAllActividades().length === 0"><td colspan="6">
+                <div class="empty-state"><div class="icon">📭</div><p>No hay actividades para mostrar</p></div>
+              </td></tr>
+              <tr *ngFor="let t of filteredAllActividades()">
+                <td><span class="inline-badge" style="background:var(--info);color:#fff">{{ t.usuario?.nombre || t.usuario?.username || 'Sin asignar' }} {{ t.usuario?.apellido || '' }}</span></td>
+                <td><div class="task-name" [class.strikethrough]="t.estado === 'done'">{{ t.nombre }}<div class="sub">{{ t.descripcion }}</div></div></td>
+                <td><span class="inline-badge">{{ t.area }}</span></td>
+                <td><span class="inline-badge" [ngStyle]="{'background': t.prioridad==='alta' ? '#ef4444' : t.prioridad==='media' ? '#f59e0b' : '#22c55e', 'color': '#fff'}">{{ t.prioridad }}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ formatDate(t.fechaLimite) }}</td>
+                <td><span class="badge" [ngClass]="{'badge-green': t.estado==='done', 'badge-amber': t.estado==='pending', 'badge-red': t.estado==='overdue'}">{{ estadoLabel(t.estado) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -190,7 +253,7 @@ import { AreaCategoria } from '../../core/models/models';
   `
 })
 export class AdminConfigComponent implements OnInit {
-  activeTab: 'inicio'|'login'|'temas'|'config' = 'inicio';
+  activeTab: 'inicio'|'login'|'temas'|'config'|'actividades' = 'inicio';
 
   kpis: AdminKpis | null = null;
 
@@ -208,6 +271,12 @@ export class AdminConfigComponent implements OnInit {
   editingAreaId: number | null = null;
   editAreaName = '';
 
+  // Actividades globales (admin)
+  allActividades: Actividad[] = [];
+  globalStats: Estadisticas | null = null;
+  actividadSearch = '';
+  actividadFiltroEstado = 'all';
+
   constructor(
     private admin: AdminService,
     private users: UsuarioService,
@@ -218,11 +287,13 @@ export class AdminConfigComponent implements OnInit {
     private toast: ToastService,
     private areaSvc: AreaService,
     private auth: AuthService,
+    private actividadSvc: ActividadService,
   ) {}
 
   ngOnInit() {
     this.loadKpis();
     this.loadUsers();
+    this.loadAllActividades();
     this.theme = this.themeSvc.getTheme();
     this.admin.getSystemConfig().subscribe(cfg => this.sys = cfg);
     this.tg.getConfig().subscribe(cfg => this.telegram = cfg);
@@ -234,13 +305,15 @@ export class AdminConfigComponent implements OnInit {
       if (t && t !== this.activeTab) {
         this.activeTab = t;
         if (t === 'inicio') this.loadKpis();
+        if (t === 'actividades') this.loadAllActividades();
       }
     });
   }
 
-  setTab(tab: 'inicio'|'login'|'temas'|'config') {
+  setTab(tab: 'inicio'|'login'|'temas'|'config'|'actividades') {
     this.activeTab = tab;
     if (tab==='inicio') this.loadKpis();
+    if (tab==='actividades') this.loadAllActividades();
     this.router.navigate([], { relativeTo: this.route, queryParams: { tab }, queryParamsHandling: 'merge' });
   }
 
@@ -309,6 +382,38 @@ export class AdminConfigComponent implements OnInit {
   // Telegram
   saveTelegram() { this.tg.saveConfig(this.telegram).subscribe({ next: cfg => { this.telegram = cfg; this.toast.show('Telegram guardado'); }, error: err => this.toast.show(err?.error?.message || 'No se pudo guardar Telegram', 'error') }); }
   testTelegram() { this.tg.testConexion().subscribe({ next: r => this.toast.show(r?.mensaje || 'Prueba enviada'), error: err => this.toast.show(err?.error?.message || 'No se pudo probar Telegram', 'error') }); }
+
+  // Actividades globales
+  loadAllActividades() {
+    this.actividadSvc.listarTodas().subscribe({ next: d => this.allActividades = d, error: () => this.toast.show('Error cargando actividades', 'error') });
+    this.actividadSvc.estadisticasGlobales().subscribe({ next: s => this.globalStats = s, error: () => {} });
+  }
+
+  filteredAllActividades(): Actividad[] {
+    let list = this.allActividades;
+    if (this.actividadFiltroEstado !== 'all') list = list.filter(t => t.estado === this.actividadFiltroEstado);
+    if (this.actividadSearch) {
+      const s = this.actividadSearch.toLowerCase();
+      list = list.filter(t =>
+        (t.nombre + ' ' + (t.descripcion || '') + ' ' + t.area + ' ' + ((t as any).usuario?.nombre || '') + ' ' + ((t as any).usuario?.apellido || '') + ' ' + ((t as any).usuario?.username || '')).toLowerCase().includes(s)
+      );
+    }
+    return list;
+  }
+
+  formatDate(dt: string) {
+    if (!dt) return '—';
+    return new Date(dt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  estadoLabel(estado: string) {
+    const m: Record<string, string> = { done: 'Completada', pending: 'Pendiente', overdue: 'Vencida' };
+    return m[estado] || estado;
+  }
+
+  irAgenda() {
+    this.router.navigate(['/agenda']);
+  }
 
   salir() {
     this.auth.logout();

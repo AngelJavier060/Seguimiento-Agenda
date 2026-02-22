@@ -49,7 +49,7 @@ public class AuthController {
                 u.getRole()
         );
 
-        return ResponseEntity.ok(new AuthResponse(token, u.getUsername(), u.getEmail(), u.getRole()));
+        return ResponseEntity.ok(new AuthResponse(token, u.getUsername(), u.getEmail(), u.getRole(), u.getNombre(), u.getApellido()));
     }
 
     @GetMapping("/me")
@@ -60,6 +60,6 @@ public class AuthController {
         }
         String username = authentication.getName();
         Usuario u = usuarioRepository.findByUsernameIgnoreCase(username).orElseThrow();
-        return ResponseEntity.ok(new AuthResponse(null, u.getUsername(), u.getEmail(), u.getRole()));
+        return ResponseEntity.ok(new AuthResponse(null, u.getUsername(), u.getEmail(), u.getRole(), u.getNombre(), u.getApellido()));
     }
 }

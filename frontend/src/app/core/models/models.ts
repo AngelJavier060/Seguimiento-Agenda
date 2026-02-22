@@ -11,6 +11,8 @@ export interface Actividad {
     estado: EstadoActividad;
     fechaCreacion?: string;
     fechaFinalizacion?: string | null;
+    // Relación con el usuario dueño
+    usuario?: { id: number; nombre?: string; apellido?: string; username: string; email?: string; role?: string };
     // Recurrencia (opcionales)
     recurrente?: boolean;
     recDiaMes?: number | null;

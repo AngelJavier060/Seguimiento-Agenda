@@ -10,8 +10,9 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   if (!user) return router.parseUrl('/login');
   if (!required) return true;
 
+  // ADMIN puede acceder a todo; USER solo a rutas con role='USER'
+  if (user.role === 'ADMIN') return true;
   if (required === 'ADMIN' && user.role !== 'ADMIN') return router.parseUrl('/login');
-  if (required === 'USER' && user.role !== 'USER') return router.parseUrl('/login');
 
   return true;
 };

@@ -32,4 +32,27 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
     long countByEstado(Actividad.EstadoActividad estado);
 
     long countByPrioridad(Actividad.Prioridad prioridad);
+
+    // ── Queries filtradas por usuario ──
+
+    List<Actividad> findByUsuarioId(Long usuarioId);
+
+    @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.estado NOT IN ('done','cancelled') AND a.fechaLimite < :now")
+    List<Actividad> findOverdueByUsuario(Long uid, LocalDateTime now);
+
+    @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.estado NOT IN ('done','cancelled') AND a.fechaLimite BETWEEN :start AND :end")
+    List<Actividad> findDueBetweenByUsuario(Long uid, LocalDateTime start, LocalDateTime end);
+
+    long countByUsuarioIdAndEstado(Long usuarioId, Actividad.EstadoActividad estado);
+
+    @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.prioridad = :prioridad")
+    List<Actividad> findByUsuarioIdAndPrioridad(Long uid, Actividad.Prioridad prioridad);
+
+    @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.estado NOT IN ('done','cancelled','overdue') AND a.fechaLimite > :now ORDER BY a.fechaLimite ASC")
+    List<Actividad> findActivasPendientesByUsuario(Long uid, LocalDateTime now);
+
+    @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.estado = 'overdue' ORDER BY a.fechaLimite ASC")
+    List<Actividad> findVencidasByUsuario(Long uid);
+
+    long countByUsuarioId(Long usuarioId);
 }

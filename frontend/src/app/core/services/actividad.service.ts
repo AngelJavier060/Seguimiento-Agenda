@@ -10,12 +10,24 @@ export class ActividadService {
 
     constructor(private http: HttpClient) { }
 
+    /** Listar actividades del usuario autenticado */
     listar(): Observable<Actividad[]> {
         return this.http.get<Actividad[]>(this.url);
     }
 
+    /** Admin: listar TODAS las actividades de todos los usuarios */
+    listarTodas(): Observable<Actividad[]> {
+        return this.http.get<Actividad[]>(`${this.url}/todas`);
+    }
+
+    /** Stats del usuario autenticado */
     estadisticas(): Observable<Estadisticas> {
         return this.http.get<Estadisticas>(`${this.url}/stats`);
+    }
+
+    /** Admin: stats globales */
+    estadisticasGlobales(): Observable<Estadisticas> {
+        return this.http.get<Estadisticas>(`${this.url}/stats/todas`);
     }
 
     crear(req: ActividadRequest): Observable<Actividad> {

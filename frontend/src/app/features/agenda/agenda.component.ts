@@ -8,6 +8,7 @@ import { AreaService } from '../../core/services/area.service';
 import { AlertaService, TelegramService } from '../../core/services/alerta.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-agenda',
@@ -19,6 +20,11 @@ import { ThemeService, ThemeMode } from '../../core/services/theme.service';
       <h1>Agenda de <span>Actividades</span></h1>
       <div class="topbar-right">
         <span class="today-date">{{ todayStr }}</span>
+        <div class="user-info" style="display:flex;align-items:center;gap:8px;margin:0 8px;padding:4px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+          <span style="font-size:18px">👤</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text)">{{ displayName() }}</span>
+          <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--accent);color:#fff">{{ userRole() }}</span>
+        </div>
         <div class="theme-switcher" style="display:flex;align-items:center;gap:8px;margin:0 12px">
           <div class="theme-dot t-dark" [class.active]="currentTheme==='dark'" (click)="onSetTheme('dark')" title="Oscuro" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #2a2f3a;cursor:pointer"></div>
           <div class="theme-dot t-light" [class.active]="currentTheme==='light'" (click)="onSetTheme('light')" title="Claro" style="width:12px;height:12px;border-radius:50%;background:#16a34a;border:2px solid #d1d5db;cursor:pointer"></div>
@@ -26,6 +32,7 @@ import { ThemeService, ThemeMode } from '../../core/services/theme.service';
           <span id="theme-name" style="font-size:12px;color:var(--muted)">{{ themeName }}</span>
         </div>
         <button class="btn btn-primary" (click)="openModal()">+ Nueva Actividad</button>
+        <button class="btn btn-ghost" style="color:#ef4444;border:1px solid #ef4444;padding:6px 16px;border-radius:8px;cursor:pointer;margin-left:8px" (click)="salir()">Salir</button>
       </div>
     </header>
 
@@ -82,22 +89,22 @@ import { ThemeService, ThemeMode } from '../../core/services/theme.service';
       <!-- FILTERS -->
       <section *ngIf="activeTab==='agenda'">
       <div class="filters">
-        <button class="filter-btn" [class.active]="currentFilter === 'all'" (click)="setFilter('all')">Todas</button>
-        <button class="filter-btn" [class.active]="currentFilter === 'pending'" (click)="setFilter('pending')">⏳ Pendientes</button>
-        <button class="filter-btn amber" [class.active]="currentFilter === 'overdue'" (click)="setFilter('overdue')">⚠️ Vencidas</button>
-        <button class="filter-btn" [class.active]="currentFilter === 'done'" (click)="setFilter('done')">✅ Completadas</button>
-        <select class="sort-select" [(ngModel)]="selectedArea">
+        <button class="filter-btn" [class.active]="currentFilter() === 'all'" (click)="setFilter('all')">Todas</button>
+        <button class="filter-btn" [class.active]="currentFilter() === 'pending'" (click)="setFilter('pending')">⏳ Pendientes</button>
+        <button class="filter-btn amber" [class.active]="currentFilter() === 'overdue'" (click)="setFilter('overdue')">⚠️ Vencidas</button>
+        <button class="filter-btn" [class.active]="currentFilter() === 'done'" (click)="setFilter('done')">✅ Completadas</button>
+        <select class="sort-select" [ngModel]="selectedArea()" (ngModelChange)="selectedArea.set($event)">
           <option value="all">Todas las áreas</option>
           <option *ngFor="let a of areas" [ngValue]="a.nombre">{{ a.nombre }}</option>
         </select>
-        <select class="sort-select" [(ngModel)]="selectedPriority">
+        <select class="sort-select" [ngModel]="selectedPriority()" (ngModelChange)="selectedPriority.set($event)">
           <option value="all">Todas las prioridades</option>
           <option value="alta">Prioridad: Alta</option>
           <option value="media">Prioridad: Media</option>
           <option value="baja">Prioridad: Baja</option>
         </select>
-        <input class="search-input" type="text" placeholder="🔍 Buscar actividad..." [(ngModel)]="searchTerm">
-        <select class="sort-select" [(ngModel)]="sortBy">
+        <input class="search-input" type="text" placeholder="🔍 Buscar actividad..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+        <select class="sort-select" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
           <option value="date">Ordenar: Fecha límite</option>
           <option value="priority">Ordenar: Prioridad</option>
           <option value="name">Ordenar: Nombre</option>
@@ -223,8 +230,8 @@ import { ThemeService, ThemeMode } from '../../core/services/theme.service';
         <div class="section-card">
           <div class="section-title">📜 Historial de Actividades</div>
           <div class="filters">
-            <input class="search-input" type="text" placeholder="🔍 Buscar..." [(ngModel)]="histSearch">
-            <select class="sort-select" [(ngModel)]="histEstado">
+            <input class="search-input" type="text" placeholder="🔍 Buscar..." [ngModel]="histSearch()" (ngModelChange)="histSearch.set($event)">
+            <select class="sort-select" [ngModel]="histEstado()" (ngModelChange)="histEstado.set($event)">
               <option value="all">Todos</option>
               <option value="done">✅ Completadas</option>
               <option value="overdue">🚨 Vencidas</option>
@@ -393,21 +400,21 @@ export class AgendaComponent implements OnInit {
     tasks = signal<Actividad[]>([]);
     stats = signal<Estadisticas | null>(null);
     areas: AreaCategoria[] = [];
-    selectedArea: string = 'all';
-    selectedPriority: 'all'|'alta'|'media'|'baja' = 'all';
+    selectedArea = signal<string>('all');
+    selectedPriority = signal<'all'|'alta'|'media'|'baja'>('all');
     activeTab: 'agenda'|'recurrentes'|'dashboard'|'historial'|'reportes'|'alertas' = 'agenda';
 
-    currentFilter = 'all';
-    searchTerm = '';
-    sortBy = 'date';
+    currentFilter = signal<string>('all');
+    searchTerm = signal<string>('');
+    sortBy = signal<string>('date');
     modalOpen = false;
     editingId: number | null = null;
     form: ActividadRequest & { descripcion?: string } = this.emptyForm();
     // Alertas y notificaciones
     alertas: AlertaConfig[] = [];
     notificaciones: Notificacion[] = [];
-    histSearch = '';
-    histEstado: 'all'|'done'|'overdue' = 'all';
+    histSearch = signal<string>('');
+    histEstado = signal<'all'|'done'|'overdue'>('all');
     urgentThresholdDays = signal<number>(3);
     urgentMaxItems = signal<number>(5);
     currentTheme: ThemeMode = 'dark';
@@ -419,25 +426,34 @@ export class AgendaComponent implements OnInit {
     recPreview: string = '';
     recDays: number[] = Array.from({ length: 28 }, (_, i) => i + 1);
 
+    /** Nombre del usuario logueado */
+    displayName = computed(() => this.auth.displayName());
+    userRole = computed(() => this.auth.user()?.role || 'USER');
+
     get todayStr() {
         return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     }
 
     filteredTasks = computed(() => {
         let list = this.tasks();
-        if (this.currentFilter !== 'all') list = list.filter(t => t.estado === this.currentFilter);
-        if (this.selectedArea && this.selectedArea !== 'all') {
-            list = list.filter(t => t.area === this.selectedArea);
+        const cf = this.currentFilter();
+        const sa = this.selectedArea();
+        const sp = this.selectedPriority();
+        const st = this.searchTerm();
+        const sb = this.sortBy();
+        if (cf !== 'all') list = list.filter(t => t.estado === cf);
+        if (sa && sa !== 'all') {
+            list = list.filter(t => t.area === sa);
         }
-        if (this.selectedPriority && this.selectedPriority !== 'all') {
-            list = list.filter(t => t.prioridad === this.selectedPriority);
+        if (sp && sp !== 'all') {
+            list = list.filter(t => t.prioridad === sp);
         }
-        if (this.searchTerm) {
-            const s = this.searchTerm.toLowerCase();
+        if (st) {
+            const s = st.toLowerCase();
             list = list.filter(t => (t.nombre + ' ' + (t.descripcion || '') + ' ' + t.area).toLowerCase().includes(s));
         }
         const ord: Record<string, number> = { alta: 0, media: 1, baja: 2 };
-        switch (this.sortBy) {
+        switch (sb) {
             case 'date': return [...list].sort((a, b) => new Date(a.fechaLimite).getTime() - new Date(b.fechaLimite).getTime());
             case 'priority': return [...list].sort((a, b) => ord[a.prioridad] - ord[b.prioridad]);
             case 'name': return [...list].sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -454,6 +470,7 @@ export class AgendaComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private theme: ThemeService,
+        private auth: AuthService,
     ) { }
 
     ngOnInit() {
@@ -486,7 +503,7 @@ export class AgendaComponent implements OnInit {
         }, error: () => this.toast.show('Error cargando áreas', 'error') });
     }
 
-    setFilter(f: string) { this.currentFilter = f; }
+    setFilter(f: string) { this.currentFilter.set(f); }
 
     completar(id: number) {
         this.svc.completar(id).subscribe({ next: () => { this.load(); this.toast.show('✅ Actividad completada', 'success'); }, error: () => this.toast.show('Error al completar', 'error') });
@@ -657,9 +674,11 @@ export class AgendaComponent implements OnInit {
     // Historial helpers
     historialList = computed(() => {
         let list = this.tasks().filter(t => ['done','overdue'].includes(t.estado));
-        if (this.histEstado !== 'all') list = list.filter(t => t.estado === this.histEstado);
-        if (this.histSearch) {
-            const s = this.histSearch.toLowerCase();
+        const he = this.histEstado();
+        const hs = this.histSearch();
+        if (he !== 'all') list = list.filter(t => t.estado === he);
+        if (hs) {
+            const s = hs.toLowerCase();
             list = list.filter(t => (t.nombre + ' ' + (t.descripcion || '') + ' ' + t.area).toLowerCase().includes(s));
         }
         return list;
@@ -725,5 +744,10 @@ export class AgendaComponent implements OnInit {
         const prev = a.habilitada;
         a.habilitada = checked;
         this.alertasSvc.actualizarAlerta(a.id, checked).subscribe({ next: () => this.toast.show('Alerta actualizada'), error: () => { a.habilitada = prev; this.toast.show('No se pudo actualizar la alerta', 'error'); } });
+    }
+
+    salir() {
+        this.auth.logout();
+        this.router.navigate(['/login']);
     }
 }

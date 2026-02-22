@@ -21,7 +21,15 @@ public class ActividadController {
 
     private final ActividadService service;
 
+    /** Listar actividades del usuario autenticado */
     @GetMapping
+    public List<Actividad> listarMias() {
+        return service.listarPorUsuario();
+    }
+
+    /** Admin: listar TODAS las actividades de todos los usuarios */
+    @GetMapping("/todas")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Actividad> listarTodas() {
         return service.listarTodas();
     }
@@ -31,8 +39,16 @@ public class ActividadController {
         return service.obtenerPorId(id);
     }
 
+    /** Stats del usuario autenticado */
     @GetMapping("/stats")
     public EstadisticasResponse estadisticas() {
+        return service.estadisticasPorUsuario();
+    }
+
+    /** Admin: stats globales */
+    @GetMapping("/stats/todas")
+    @PreAuthorize("hasRole('ADMIN')")
+    public EstadisticasResponse estadisticasGlobales() {
         return service.estadisticas();
     }
 

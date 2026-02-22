@@ -4,9 +4,12 @@ import com.agenda.backend.dto.ActividadRequest;
 import com.agenda.backend.dto.EstadisticasResponse;
 import com.agenda.backend.entity.Actividad;
 import com.agenda.backend.entity.Actividad.EstadoActividad;
+import com.agenda.backend.entity.Usuario;
 import com.agenda.backend.repository.ActividadRepository;
+import com.agenda.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +24,24 @@ import java.util.NoSuchElementException;
 public class ActividadService {
 
     private final ActividadRepository repo;
+    private final UsuarioRepository usuarioRepo;
 
-    // ── CRUD ──────────────────────────────────────────────
+    // ── Obtener usuario autenticado ──────────────────────
+    private Usuario getAuthenticatedUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepo.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado: " + username));
+    }
 
+    // ── CRUD (filtrado por usuario) ──────────────────────
+
+    public List<Actividad> listarPorUsuario() {
+        sincronizarVencidas();
+        Usuario u = getAuthenticatedUser();
+        return repo.findByUsuarioId(u.getId());
+    }
+
+    /** Admin: listar TODAS las actividades */
     public List<Actividad> listarTodas() {
         sincronizarVencidas();
         return repo.findAll();
@@ -36,6 +54,7 @@ public class ActividadService {
 
     @Transactional
     public Actividad crear(ActividadRequest req) {
+        Usuario u = getAuthenticatedUser();
         Actividad a = Actividad.builder()
                 .nombre(req.getNombre())
                 .descripcion(req.getDescripcion())
@@ -43,6 +62,7 @@ public class ActividadService {
                 .prioridad(req.getPrioridad())
                 .area(req.getArea())
                 .estado(calcularEstado(req.getFechaLimite(), null))
+                .usuario(u)
                 .build();
         // Recurrencia (si viene)
         a.setRecurrente(Boolean.TRUE.equals(req.getRecurrente()));
@@ -98,6 +118,7 @@ public class ActividadService {
 
     // ── STATS ─────────────────────────────────────────────
 
+    /** Stats globales (para admin) */
     public EstadisticasResponse estadisticas() {
         sincronizarVencidas();
         long total = repo.count();
@@ -111,6 +132,32 @@ public class ActividadService {
 
         LocalDateTime now = LocalDateTime.now();
         long vencenSemana = repo.findDueBetween(now, now.plusDays(7)).size();
+
+        int tasaVencidas = total == 0 ? 0 : (int) Math.round((double) vencidas / total * 100);
+
+        return EstadisticasResponse.builder()
+                .total(total).completadas(completadas).vencidas(vencidas)
+                .pendientes(pendientes).cumplimientoPct(pct)
+                .altaPrioridad(altaPrioridad).vencenEstaSemana(vencenSemana)
+                .tasaVencidas(tasaVencidas).build();
+    }
+
+    /** Stats filtradas por usuario autenticado */
+    public EstadisticasResponse estadisticasPorUsuario() {
+        sincronizarVencidas();
+        Usuario u = getAuthenticatedUser();
+        Long uid = u.getId();
+        long total = repo.countByUsuarioId(uid);
+        long completadas = repo.countByUsuarioIdAndEstado(uid, EstadoActividad.done);
+        long vencidas = repo.countByUsuarioIdAndEstado(uid, EstadoActividad.overdue);
+        long pendientes = repo.countByUsuarioIdAndEstado(uid, EstadoActividad.pending);
+        int pct = total == 0 ? 0 : (int) Math.round((double) completadas / total * 100);
+
+        long altaPrioridad = repo.findByUsuarioIdAndPrioridad(uid, Actividad.Prioridad.alta).stream()
+                .filter(a -> a.getEstado() != EstadoActividad.done).count();
+
+        LocalDateTime now = LocalDateTime.now();
+        long vencenSemana = repo.findDueBetweenByUsuario(uid, now, now.plusDays(7)).size();
 
         int tasaVencidas = total == 0 ? 0 : (int) Math.round((double) vencidas / total * 100);
 
@@ -186,6 +233,7 @@ public class ActividadService {
                 .prioridad(a.getPrioridad())
                 .area(a.getArea())
                 .estado(EstadoActividad.pending)
+                .usuario(a.getUsuario())
                 .build();
         // Copiar configuración de recurrencia
         b.setRecurrente(true);
