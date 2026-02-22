@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type ThemeMode = 'light' | 'dark' | 'ocean';
+export type ThemeMode = 'light' | 'dark' | 'ocean' | 'corporate';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -23,6 +23,8 @@ export class ThemeService {
       root.setAttribute('data-theme', 'light');
     } else if (mode === 'ocean') {
       root.setAttribute('data-theme', 'ocean');
+    } else if (mode === 'corporate') {
+      root.setAttribute('data-theme', 'corporate');
     } else {
       root.removeAttribute('data-theme');
     }

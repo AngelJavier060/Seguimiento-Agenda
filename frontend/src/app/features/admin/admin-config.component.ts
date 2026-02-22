@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TelegramService } from '../../core/services/alerta.service';
 import { AdminService, AdminKpis, SystemConfig } from '../../core/services/admin.service';
 import { UsuarioService, UsuarioDto, UsuarioRequest, UserRole } from '../../core/services/usuario.service';
-import { ThemeService, ThemeMode } from '../../core/services/theme.service';
+import { ThemeService, type ThemeMode } from '../../core/services/theme.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -167,13 +167,24 @@ import { ActividadService } from '../../core/services/actividad.service';
       <!-- Temas -->
       <section *ngIf="activeTab==='temas'">
         <div class="progress-section">
-          <div class="progress-title" style="margin-bottom:12px">Apariencia</div>
-          <div class="flex items-center gap-10">
-            <label class="toggle">
-              <input type="checkbox" [checked]="theme==='light'" (change)="toggleTheme($event)">
-              <span class="toggle-slider"></span>
-            </label>
-            <div>Modo claro</div>
+          <div class="progress-title" style="margin-bottom:16px">Apariencia</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <div (click)="setThemeTo('dark')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:3px solid" [style.borderColor]="theme==='dark' ? '#4ade80' : 'var(--border)'">
+              <div style="height:60px;background:linear-gradient(135deg,#0d0f14 50%,#141720 50%)"></div>
+              <div style="padding:10px;text-align:center;font-size:13px;font-weight:600;background:var(--surface)">🌙 Oscuro</div>
+            </div>
+            <div (click)="setThemeTo('light')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:3px solid" [style.borderColor]="theme==='light' ? '#16a34a' : 'var(--border)'">
+              <div style="height:60px;background:linear-gradient(135deg,#f6f7f8 50%,#ffffff 50%)"></div>
+              <div style="padding:10px;text-align:center;font-size:13px;font-weight:600;background:var(--surface)">☀️ Claro</div>
+            </div>
+            <div (click)="setThemeTo('ocean')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:3px solid" [style.borderColor]="theme==='ocean' ? '#38bdf8' : 'var(--border)'">
+              <div style="height:60px;background:linear-gradient(135deg,#0f172a 50%,#1e3a5f 50%)"></div>
+              <div style="padding:10px;text-align:center;font-size:13px;font-weight:600;background:var(--surface)">🌊 Océano</div>
+            </div>
+            <div (click)="setThemeTo('corporate')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:3px solid" [style.borderColor]="theme==='corporate' ? '#4D7C8A' : 'var(--border)'">
+              <div style="height:60px;background:linear-gradient(135deg,#4D7C8A 33%,#7F9C96 66%,#8FAD88 100%)"></div>
+              <div style="padding:10px;text-align:center;font-size:13px;font-weight:600;background:var(--surface)">🏢 Corporativo</div>
+            </div>
           </div>
         </div>
       </section>
@@ -349,6 +360,10 @@ export class AdminConfigComponent implements OnInit {
   resetForm() { this.editing = false; this.editingId = null; this.form = { username: '', email: '', role: 'USER', password: '' }; }
 
   // Temas
+  setThemeTo(mode: ThemeMode) {
+    this.theme = mode;
+    this.themeSvc.setTheme(mode);
+  }
   toggleTheme(ev: Event) {
     const checked = (ev.target as HTMLInputElement).checked;
     this.theme = checked ? 'light' : 'dark';

@@ -61,6 +61,31 @@
     }
     body { font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: #e2e8f0; }
     html[data-theme='light'] body { color: #0f172a; }
+
+    /* ── CORPORATE THEME (Air Force Blue / Cambridge Green) ── */
+    :root[data-theme='corporate'] {
+      --bg-deep: #f0f4f5;
+      --bg-sidebar: #4D7C8A;
+      --bg-card: #ffffff;
+      --accent-emerald: #8FAD88;
+      --accent-amber: #f59e0b;
+      --accent-blue: #4D7C8A;
+      --accent-rose: #f43f5e;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --glass-bg: rgba(255, 255, 255, 0.65);
+      /* legacy variables */
+      --bg: #f0f4f5;
+      --surface: #ffffff;
+      --surface2: #e8efef;
+      --border: #c8d5d8;
+      --accent: #8FAD88;
+      --accent2: #f59e0b;
+      --danger: #ef4444;
+      --info: #4D7C8A;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+    html[data-theme='corporate'] body { color: #1e293b; }
     .heading-font { font-family: 'Playfair Display', serif; }
     .glass-effect { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-subtle); }
     .sidebar-item-active { background: linear-gradient(90deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0) 100%); border-left: 3px solid var(--accent-emerald); }

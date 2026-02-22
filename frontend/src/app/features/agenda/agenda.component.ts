@@ -29,6 +29,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="theme-dot t-dark" [class.active]="currentTheme==='dark'" (click)="onSetTheme('dark')" title="Oscuro" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #2a2f3a;cursor:pointer"></div>
           <div class="theme-dot t-light" [class.active]="currentTheme==='light'" (click)="onSetTheme('light')" title="Claro" style="width:12px;height:12px;border-radius:50%;background:#16a34a;border:2px solid #d1d5db;cursor:pointer"></div>
           <div class="theme-dot t-ocean" [class.active]="currentTheme==='ocean'" (click)="onSetTheme('ocean')" title="Océano" style="width:12px;height:12px;border-radius:50%;background:#38bdf8;border:2px solid #0f172a;cursor:pointer"></div>
+          <div class="theme-dot t-corporate" [class.active]="currentTheme==='corporate'" (click)="onSetTheme('corporate')" title="Corporativo" style="width:12px;height:12px;border-radius:50%;background:#4D7C8A;border:2px solid #8FAD88;cursor:pointer"></div>
           <span id="theme-name" style="font-size:12px;color:var(--muted)">{{ themeName }}</span>
         </div>
         <button class="btn btn-primary" (click)="openModal()">+ Nueva Actividad</button>
@@ -148,7 +149,9 @@ import { AuthService } from '../../core/services/auth.service';
                       <button class="action-btn complete" (click)="completar(t.id)" title="Marcar completada">✅</button>
                     }
                     <button class="action-btn" (click)="editTask(t)" title="Editar">✏️</button>
-                    <button class="action-btn delete" (click)="eliminar(t.id)" title="Eliminar">🗑️</button>
+                    @if (userRole() === 'ADMIN') {
+                      <button class="action-btn delete" (click)="eliminar(t.id)" title="Eliminar">🗑️</button>
+                    }
                   </div>
                 </td>
               </tr>
@@ -725,7 +728,7 @@ export class AgendaComponent implements OnInit {
     }
 
     get themeName() {
-        const map: Record<ThemeMode, string> = { dark: 'Oscuro', light: 'Claro', ocean: 'Océano' };
+        const map: Record<ThemeMode, string> = { dark: 'Oscuro', light: 'Claro', ocean: 'Océano', corporate: 'Corporativo' };
         return map[this.currentTheme] || 'Oscuro';
     }
     onSetTheme(mode: ThemeMode) {

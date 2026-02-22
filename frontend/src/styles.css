@@ -298,6 +298,41 @@ select.form-control { color: var(--text); }
 @keyframes rowIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .task-row { animation: rowIn .2s ease; }
 
+/* ── CORPORATE THEME OVERRIDES ────────────────────────── */
+[data-theme='corporate'] .topbar { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .topbar h1 { color: #1e293b; }
+[data-theme='corporate'] .topbar h1 span { color: #8FAD88; }
+[data-theme='corporate'] .stat-card { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .stat-card:hover { border-color: #8FAD88; }
+[data-theme='corporate'] .task-section { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .progress-section { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .progress-fill { background: linear-gradient(90deg, #7F9C96, #8FAD88); }
+[data-theme='corporate'] .btn-primary { background: #4D7C8A; color: #fff; }
+[data-theme='corporate'] .btn-primary:hover { background: #3d6a77; }
+[data-theme='corporate'] .filter-btn.active { border-color: #8FAD88; color: #4D7C8A; background: rgba(143,173,136,.1); }
+[data-theme='corporate'] .toggle input:checked + .toggle-slider { background: rgba(77,124,138,.3); }
+[data-theme='corporate'] .toggle input:checked + .toggle-slider::before { background: #4D7C8A; }
+[data-theme='corporate'] th { background: #e8efef; color: #64748b; border-color: #c8d5d8; }
+[data-theme='corporate'] td { border-color: #e2e8f0; }
+[data-theme='corporate'] tr:hover td { background: rgba(143,173,136,.05); }
+[data-theme='corporate'] .form-control { background: #f8fafb; border-color: #c8d5d8; color: #1e293b; }
+[data-theme='corporate'] .form-control:focus { border-color: rgba(77,124,138,.5); }
+[data-theme='corporate'] .modal .form-control { background: #f0f4f5; color: #1e293b; border-color: #c8d5d8; }
+[data-theme='corporate'] .modal .form-control:focus { border-color: rgba(77,124,138,.6); box-shadow: 0 0 0 2px rgba(77,124,138,.15); }
+[data-theme='corporate'] .modal { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .modal h2 { color: #1e293b; }
+[data-theme='corporate'] .search-input { background: #f8fafb; border-color: #c8d5d8; color: #1e293b; }
+[data-theme='corporate'] .sort-select { background: #f8fafb; border-color: #c8d5d8; color: #1e293b; }
+[data-theme='corporate'] .report-card { background: #fff; border-color: #c8d5d8; }
+[data-theme='corporate'] .report-preview { background: #e8efef; color: #64748b; }
+[data-theme='corporate'] .badge-green { background: rgba(143,173,136,.15); color: #5a8a50; }
+[data-theme='corporate'] .badge-blue { background: rgba(77,124,138,.12); color: #4D7C8A; }
+[data-theme='corporate'] .nav-item.active { background: rgba(143,173,136,.1); color: #4D7C8A; border-color: rgba(77,124,138,.2); }
+[data-theme='corporate'] .toast.success { background: rgba(143,173,136,.12); border-color: rgba(143,173,136,.3); color: #5a8a50; }
+[data-theme='corporate'] input[type="datetime-local"].form-control,
+[data-theme='corporate'] input[type="date"].form-control,
+[data-theme='corporate'] input[type="time"].form-control { color: #1e293b; color-scheme: light; }
+
 /* ── RESPONSIVE ──────────────────────────────────────── */
 @media (max-width: 900px) {
   .app-layout { grid-template-columns: 1fr; }
