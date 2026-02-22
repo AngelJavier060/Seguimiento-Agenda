@@ -7,6 +7,7 @@ import { UsuarioService, UsuarioDto, UsuarioRequest, UserRole } from '../../core
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { AreaService } from '../../core/services/area.service';
 import { AreaCategoria } from '../../core/models/models';
 
@@ -15,8 +16,9 @@ import { AreaCategoria } from '../../core/models/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <header class="topbar">
+  <header class="topbar" style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Panel de <span>Administración</span></h1>
+    <button class="btn btn-ghost" style="color:#ef4444;border:1px solid #ef4444;padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="salir()">Salir</button>
   </header>
   <main class="main">
     <div class="max-w-6xl mx-auto">
@@ -215,6 +217,7 @@ export class AdminConfigComponent implements OnInit {
     private route: ActivatedRoute,
     private toast: ToastService,
     private areaSvc: AreaService,
+    private auth: AuthService,
   ) {}
 
   ngOnInit() {
@@ -306,4 +309,9 @@ export class AdminConfigComponent implements OnInit {
   // Telegram
   saveTelegram() { this.tg.saveConfig(this.telegram).subscribe({ next: cfg => { this.telegram = cfg; this.toast.show('Telegram guardado'); }, error: err => this.toast.show(err?.error?.message || 'No se pudo guardar Telegram', 'error') }); }
   testTelegram() { this.tg.testConexion().subscribe({ next: r => this.toast.show(r?.mensaje || 'Prueba enviada'), error: err => this.toast.show(err?.error?.message || 'No se pudo probar Telegram', 'error') }); }
+
+  salir() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 }

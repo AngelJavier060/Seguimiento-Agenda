@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -34,8 +35,11 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<UsuarioDto> crear(@Valid @RequestBody UsuarioRequest req) {
-        if (req.getEmail() == null || !req.getEmail().toLowerCase().endsWith("@gmail.com")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo debe ser de dominio @gmail.com");
+        if (repo.findByUsernameIgnoreCase(req.getUsername()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya existe");
+        }
+        if (repo.findByEmailIgnoreCase(req.getEmail()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo electrónico ya está registrado");
         }
         Usuario u = Usuario.builder()
                 .nombre(req.getNombre())
@@ -53,9 +57,18 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public UsuarioDto actualizar(@PathVariable Long id, @Valid @RequestBody UsuarioRequest req) {
         Usuario u = repo.findById(id).orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
-        if (req.getEmail() == null || !req.getEmail().toLowerCase().endsWith("@gmail.com")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo debe ser de dominio @gmail.com");
-        }
+        // Verificar unicidad de username
+        repo.findByUsernameIgnoreCase(req.getUsername())
+                .filter(existing -> !existing.getId().equals(id))
+                .ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya existe");
+                });
+        // Verificar unicidad de email
+        repo.findByEmailIgnoreCase(req.getEmail())
+                .filter(existing -> !existing.getId().equals(id))
+                .ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo electrónico ya está registrado");
+                });
         Role anterior = u.getRole();
         Role nuevoRol = req.getRole() != null ? req.getRole() : u.getRole();
         if (anterior == Role.ADMIN && nuevoRol != Role.ADMIN) {
