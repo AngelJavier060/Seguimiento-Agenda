@@ -239,6 +239,15 @@ tr:hover td { background: rgba(255,255,255,.02); }
   outline: none; transition: border-color .15s;
 }
 .form-control:focus { border-color: rgba(74,222,128,.5); }
+.form-control::placeholder { color: var(--muted); opacity: 0.7; }
+.form-control option { background: var(--surface); color: var(--text); }
+input[type="datetime-local"].form-control,
+input[type="date"].form-control,
+input[type="time"].form-control { color: var(--text); color-scheme: dark; }
+select.form-control { color: var(--text); }
+.modal .form-control { background: var(--bg); color: #fff; border: 1px solid var(--border); }
+.modal .form-control:focus { border-color: rgba(74,222,128,.6); box-shadow: 0 0 0 2px rgba(74,222,128,.15); }
+.modal .form-control::placeholder { color: #9ca3af; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 

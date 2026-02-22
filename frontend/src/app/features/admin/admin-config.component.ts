@@ -20,7 +20,6 @@ import { ActividadService } from '../../core/services/actividad.service';
   <header class="topbar" style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Panel de <span>Administración</span></h1>
     <div style="display:flex;align-items:center;gap:12px;">
-      <button class="btn btn-primary" style="padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="irAgenda()">📋 Mi Agenda</button>
       <button class="btn btn-ghost" style="color:#ef4444;border:1px solid #ef4444;padding:6px 16px;border-radius:8px;cursor:pointer;" (click)="salir()">Salir</button>
     </div>
   </header>
@@ -28,7 +27,7 @@ import { ActividadService } from '../../core/services/actividad.service';
     <div class="max-w-6xl mx-auto">
       <div class="flex gap-2 mb-4">
         <button class="btn btn-ghost" [class.nav-item]="false" [class.active]="activeTab==='inicio'" (click)="setTab('inicio')">Inicio</button>
-        <button class="btn btn-ghost" [class.active]="activeTab==='actividades'" (click)="setTab('actividades')">📋 Actividades</button>
+        <button class="btn btn-ghost" [class.active]="activeTab==='actividades'" (click)="setTab('actividades')">📋 Agenda de Actividades</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='login'" (click)="setTab('login')">Login</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='temas'" (click)="setTab('temas')">Temas</button>
         <button class="btn btn-ghost" [class.active]="activeTab==='config'" (click)="setTab('config')">Configuración</button>
