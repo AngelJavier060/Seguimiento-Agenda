@@ -1,0 +1,30 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seguimiento-agenda-frontend
+    ports:
+      - "4200:80"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    image: backend-app:latest
+    container_name: seguimiento-agenda-backend
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda
+      SPRING_DATASOURCE_USERNAME: seguimiento_user
+      SPRING_DATASOURCE_PASSWORD: Javier_Valle21
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
