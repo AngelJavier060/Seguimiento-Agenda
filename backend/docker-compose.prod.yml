@@ -1,0 +1,25 @@
+# ============================================================
+# DOCKER COMPOSE PARA PRODUCCIÓN
+# Usar cuando PostgreSQL está instalado en el HOST (no en contenedor)
+# ============================================================
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# ============================================================
+
+services:
+  app:
+    build: .
+    container_name: seguimiento-agenda-backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      # Spring Boot reconoce SPRING_DATASOURCE_* automáticamente
+      # y sobrescribe los valores de application.properties
+      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda
+      SPRING_DATASOURCE_USERNAME: seguimiento_user
+      SPRING_DATASOURCE_PASSWORD: Javier_Valle21
+      # Variables de Telegram (descomentar y configurar)
+      # TELEGRAM_BOT_TOKEN: tu_token_aqui
+      # TELEGRAM_CHAT_ID: tu_chat_id_aqui
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -26,7 +26,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/agenda_db
       SPRING_DATASOURCE_USERNAME: agenda_user
       SPRING_DATASOURCE_PASSWORD: agenda_pass
-      # En producción, puedes añadir aquí las variables de Telegram
+      # Variables de Telegram (descomentar y configurar)
       # TELEGRAM_BOT_TOKEN: TU_TOKEN
       # TELEGRAM_CHAT_ID: TU_CHAT_ID
 
