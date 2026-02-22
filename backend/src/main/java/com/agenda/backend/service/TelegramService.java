@@ -49,8 +49,9 @@ public class TelegramService {
                 guardarNotificacion(tipo, mensaje, resolveDestinatario(cfg), "❌ No enviado (sin destino)");
                 return false;
             }
+            String encodedChat = URLEncoder.encode(chat, StandardCharsets.UTF_8);
             String url = "https://api.telegram.org/bot" + cfg.getBotToken()
-                    + "/sendMessage?chat_id=" + chat
+                    + "/sendMessage?chat_id=" + encodedChat
                     + "&text=" + encodedMsg + "&parse_mode=HTML";
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

@@ -7,12 +7,21 @@ import { AlertaConfig, Notificacion } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
 
 const ALERTA_META: Record<string, { title: string; desc: string }> = {
-  ALERTA_PROXIMA: { title: '⚠️ Alerta: Tarea próxima a vencer', desc: 'Notificación 24 horas antes del vencimiento de cada tarea' },
-  ALERTA_VENCIDA: { title: '🚨 Alerta: Tarea vencida', desc: 'Aviso inmediato cuando una tarea supera su fecha límite sin completarse' },
+  ALERTA_PROXIMA: {
+    title: '⚠️ Alertas graduadas por urgencia',
+    desc: '📋 >7 días: cada 3 días · ⚠️ 2-7 días: cada 24h · 🔶 24-48h: cada 8h · 🚨 <24h: cada 2h'
+  },
+  ALERTA_VENCIDA: {
+    title: '💀 Alerta: Tarea vencida',
+    desc: 'Notificación diaria individual por cada tarea que superó su fecha límite'
+  },
   REPORTE_DIARIO: { title: '📅 Reporte diario automático', desc: 'Resumen de actividades enviado cada mañana a las 7:00 AM' },
   REPORTE_SEMANAL: { title: '📋 Reporte semanal automático', desc: 'Resumen de la semana enviado cada lunes a las 8:00 AM' },
-  REPORTE_MENSUAL: { title: '📈 Reporte mensual PDF', desc: 'Estadísticas completas enviadas el primer día de cada mes' },
-  RECORDATORIO_VENCIDAS: { title: '🔁 Recordatorio de vencidas', desc: 'Recordatorio diario de tareas vencidas hasta que sean completadas' }
+  REPORTE_MENSUAL: { title: '📈 Reporte mensual', desc: 'Estadísticas completas enviadas el primer día de cada mes a las 8:00 AM' },
+  RECORDATORIO_VENCIDAS: {
+    title: '🔁 Recordatorio de vencidas (resumen)',
+    desc: 'Resumen diario a las 8:30 AM con listado de todas las tareas vencidas pendientes'
+  }
 };
 
 @Component({

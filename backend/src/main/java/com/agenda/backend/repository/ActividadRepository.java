@@ -21,6 +21,14 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
     @Query("SELECT a FROM Actividad a WHERE a.estado NOT IN ('done','cancelled') AND a.fechaLimite BETWEEN :start AND :end")
     List<Actividad> findDueBetween(LocalDateTime start, LocalDateTime end);
 
+    // Actividades activas (pendientes/en proceso) con fecha límite futura — para alertas graduadas
+    @Query("SELECT a FROM Actividad a WHERE a.estado NOT IN ('done','cancelled','overdue') AND a.fechaLimite > :now ORDER BY a.fechaLimite ASC")
+    List<Actividad> findActivasPendientes(LocalDateTime now);
+
+    // Actividades vencidas que no están completadas ni canceladas — para recordatorio de vencidas
+    @Query("SELECT a FROM Actividad a WHERE a.estado = 'overdue' ORDER BY a.fechaLimite ASC")
+    List<Actividad> findVencidas();
+
     long countByEstado(Actividad.EstadoActividad estado);
 
     long countByPrioridad(Actividad.Prioridad prioridad);

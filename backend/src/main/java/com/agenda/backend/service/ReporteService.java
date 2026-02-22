@@ -8,9 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -22,6 +24,12 @@ public class ReporteService {
     private final ActividadRepository actividadRepo;
     private final TelegramService telegramService;
     private final AlertaConfigService alertaConfigService;
+
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    // ══════════════════════════════════════════════════════
+    //  REPORTES AUTOMÁTICOS
+    // ══════════════════════════════════════════════════════
 
     // ── DIARIO: cada día a las 7:00 AM ────────────────────
     @Scheduled(cron = "0 0 7 * * *")
@@ -47,25 +55,191 @@ public class ReporteService {
         telegramService.enviarMensaje(generarReporteMensual(), "📈 Reporte Mensual");
     }
 
-    // ── ALERTAS: cada hora, revisa vencimientos ────────────
-    @Scheduled(fixedDelay = 3_600_000)
-    public void alertasVencimiento() {
+    // ══════════════════════════════════════════════════════
+    //  SISTEMA DE ALERTAS GRADUADAS POR URGENCIA
+    // ══════════════════════════════════════════════════════
+    //
+    //  TIER         | Tiempo restante   | Frecuencia
+    //  ─────────────|───────────────────|───────────
+    //  📋 Lejana    | > 7 días          | Cada 3 días
+    //  ⚠️ Próxima   | 2 – 7 días        | Cada 24 horas
+    //  🔶 Urgente   | 24 – 48 horas     | Cada 8 horas
+    //  🚨 Crítica   | < 24 horas        | Cada 2 horas
+    //
+    // ══════════════════════════════════════════════════════
+
+    @Scheduled(fixedDelay = 1_800_000) // Cada 30 minutos evalúa alertas
+    @Transactional
+    public void alertasGraduadas() {
         if (!alertaConfigService.isHabilitada(TipoAlerta.ALERTA_PROXIMA))
             return;
-        LocalDateTime in24h = LocalDateTime.now().plusHours(24);
+
         LocalDateTime now = LocalDateTime.now();
-        List<Actividad> proximas = actividadRepo.findDueBetween(now, in24h);
-        proximas.forEach(a -> {
+        List<Actividad> activas = actividadRepo.findActivasPendientes(now);
+
+        for (Actividad a : activas) {
+            long horasRestantes = ChronoUnit.HOURS.between(now, a.getFechaLimite());
+            long diasRestantes = ChronoUnit.DAYS.between(now, a.getFechaLimite());
+
+            String tier;
+            String icono;
+            long intervaloHoras;
+
+            if (horasRestantes <= 24) {
+                // TIER CRÍTICA: < 24 horas → cada 2 horas
+                tier = "CRÍTICA";
+                icono = "🚨";
+                intervaloHoras = 2;
+            } else if (horasRestantes <= 48) {
+                // TIER URGENTE: 24-48 horas → cada 8 horas
+                tier = "URGENTE";
+                icono = "🔶";
+                intervaloHoras = 8;
+            } else if (diasRestantes <= 7) {
+                // TIER PRÓXIMA: 2-7 días → cada 24 horas
+                tier = "PRÓXIMA";
+                icono = "⚠️";
+                intervaloHoras = 24;
+            } else {
+                // TIER LEJANA: > 7 días → cada 3 días (72 horas)
+                tier = "LEJANA";
+                icono = "📋";
+                intervaloHoras = 72;
+            }
+
+            // Verificar si ya pasó suficiente tiempo desde la última alerta
+            if (a.getUltimaAlertaEnviada() != null) {
+                long horasDesdeUltima = ChronoUnit.HOURS.between(a.getUltimaAlertaEnviada(), now);
+                if (horasDesdeUltima < intervaloHoras) {
+                    continue; // Aún no toca alertar
+                }
+            }
+
+            // Construir mensaje con nivel de urgencia
+            String tiempoRestante = diasRestantes > 0
+                    ? diasRestantes + " día" + (diasRestantes != 1 ? "s" : "") + " y " + (horasRestantes % 24) + "h"
+                    : horasRestantes + " hora" + (horasRestantes != 1 ? "s" : "");
+
+            String prioridadTexto = switch (a.getPrioridad()) {
+                case alta -> "🔴 Alta";
+                case media -> "🟡 Media";
+                case baja -> "🟢 Baja";
+            };
+
             String msg = String.format(
-                    "⚠️ <b>Tarea próxima a vencer</b>\n📌 %s\n📅 %s\n🏷️ Área: %s",
+                    "%s <b>Alerta %s</b>\n" +
+                    "━━━━━━━━━━━━━━━━━━━━\n" +
+                    "📌 <b>%s</b>\n" +
+                    "⏰ Vence: %s\n" +
+                    "⏳ Quedan: <b>%s</b>\n" +
+                    "🏷️ Área: %s\n" +
+                    "📊 Prioridad: %s\n" +
+                    "━━━━━━━━━━━━━━━━━━━━\n" +
+                    "🔔 Próxima alerta en %dh",
+                    icono, tier,
                     a.getNombre(),
-                    a.getFechaLimite().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
-                    a.getArea());
-            telegramService.enviarMensaje(msg, "⚠️ Alerta Próxima");
-        });
+                    a.getFechaLimite().format(FMT),
+                    tiempoRestante,
+                    a.getArea(),
+                    prioridadTexto,
+                    intervaloHoras);
+
+            boolean enviado = telegramService.enviarMensaje(msg, icono + " Alerta " + tier);
+            if (enviado) {
+                a.setUltimaAlertaEnviada(now);
+                actividadRepo.save(a);
+                log.info("Alerta {} enviada para tarea '{}' ({}h restantes)", tier, a.getNombre(), horasRestantes);
+            }
+        }
     }
 
-    // ── ENVÍO MANUAL ──────────────────────────────────────
+    // ══════════════════════════════════════════════════════
+    //  ALERTA DE TAREAS VENCIDAS
+    // ══════════════════════════════════════════════════════
+
+    @Scheduled(cron = "0 0 9 * * *") // Cada día a las 9:00 AM
+    @Transactional
+    public void alertasVencidas() {
+        if (!alertaConfigService.isHabilitada(TipoAlerta.ALERTA_VENCIDA))
+            return;
+
+        List<Actividad> vencidas = actividadRepo.findVencidas();
+        if (vencidas.isEmpty()) return;
+
+        for (Actividad a : vencidas) {
+            long diasVencida = ChronoUnit.DAYS.between(a.getFechaLimite(), LocalDateTime.now());
+
+            // Solo alertar si no se alertó en las últimas 24h
+            if (a.getUltimaAlertaEnviada() != null) {
+                long horasDesdeUltima = ChronoUnit.HOURS.between(a.getUltimaAlertaEnviada(), LocalDateTime.now());
+                if (horasDesdeUltima < 24) continue;
+            }
+
+            String msg = String.format(
+                    "💀 <b>TAREA VENCIDA</b>\n" +
+                    "━━━━━━━━━━━━━━━━━━━━\n" +
+                    "📌 <b>%s</b>\n" +
+                    "📅 Venció: %s\n" +
+                    "⏰ Hace: <b>%d día%s</b>\n" +
+                    "🏷️ Área: %s\n" +
+                    "━━━━━━━━━━━━━━━━━━━━\n" +
+                    "⚡ Requiere acción inmediata",
+                    a.getNombre(),
+                    a.getFechaLimite().format(FMT),
+                    diasVencida, diasVencida != 1 ? "s" : "",
+                    a.getArea());
+
+            boolean enviado = telegramService.enviarMensaje(msg, "💀 Tarea Vencida");
+            if (enviado) {
+                a.setUltimaAlertaEnviada(LocalDateTime.now());
+                actividadRepo.save(a);
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  RECORDATORIO DIARIO DE VENCIDAS (resumen)
+    // ══════════════════════════════════════════════════════
+
+    @Scheduled(cron = "0 30 8 * * *") // Cada día a las 8:30 AM
+    public void recordatorioVencidas() {
+        if (!alertaConfigService.isHabilitada(TipoAlerta.RECORDATORIO_VENCIDAS))
+            return;
+
+        List<Actividad> vencidas = actividadRepo.findVencidas();
+        if (vencidas.isEmpty()) return;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("🔁 <b>RECORDATORIO — Tareas Vencidas</b>\n");
+        sb.append("━━━━━━━━━━━━━━━━━━━━\n");
+        sb.append(String.format("📊 Total vencidas: <b>%d</b>\n\n", vencidas.size()));
+
+        int count = 0;
+        for (Actividad a : vencidas) {
+            if (count >= 10) {
+                sb.append(String.format("\n... y %d más\n", vencidas.size() - 10));
+                break;
+            }
+            long diasVencida = ChronoUnit.DAYS.between(a.getFechaLimite(), LocalDateTime.now());
+            String prioIcon = switch (a.getPrioridad()) {
+                case alta -> "🔴";
+                case media -> "🟡";
+                case baja -> "🟢";
+            };
+            sb.append(String.format("%s %s — vencida hace %dd\n", prioIcon, a.getNombre(), diasVencida));
+            count++;
+        }
+
+        sb.append("\n━━━━━━━━━━━━━━━━━━━━\n");
+        sb.append("⚡ Complete o reprograme estas tareas");
+
+        telegramService.enviarMensaje(sb.toString(), "🔁 Recordatorio Vencidas");
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  ENVÍO MANUAL
+    // ══════════════════════════════════════════════════════
+
     public boolean enviarManual(String tipo) {
         String msg = switch (tipo) {
             case "daily" -> generarReporteDiario();
@@ -82,7 +256,10 @@ public class ReporteService {
         return telegramService.enviarMensaje(msg, label);
     }
 
-    // ── BUILDERS ──────────────────────────────────────────
+    // ══════════════════════════════════════════════════════
+    //  BUILDERS DE REPORTES
+    // ══════════════════════════════════════════════════════
+
     private String generarReporteDiario() {
         EstadisticasResponse stats = actividadService.estadisticas();
         return String.format("""
@@ -97,7 +274,7 @@ public class ReporteService {
                 """,
                 stats.getCompletadas(), stats.getPendientes(),
                 stats.getVencidas(), stats.getCumplimientoPct(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                LocalDateTime.now().format(FMT));
     }
 
     private String generarReporteSemanal() {

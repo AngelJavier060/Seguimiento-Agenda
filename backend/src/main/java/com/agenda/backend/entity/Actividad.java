@@ -77,6 +77,10 @@ public class Actividad {
     @Column(name = "rec_next_generated")
     private Boolean recNextGenerated;
 
+    // Control de alertas graduadas: cuándo fue la última alerta enviada para esta actividad
+    @Column(name = "ultima_alerta_enviada")
+    private LocalDateTime ultimaAlertaEnviada;
+
     // Historial simple de eventos (creación, cambios de estado, recurrencia)
     @ElementCollection
     @CollectionTable(name = "actividad_logs", joinColumns = @JoinColumn(name = "actividad_id"))
