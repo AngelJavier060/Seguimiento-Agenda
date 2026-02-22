@@ -16,7 +16,7 @@ import java.util.List;
 @RequestMapping("/api/v1/actividades")
 @CrossOrigin("*")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
 public class ActividadController {
 
     private final ActividadService service;
