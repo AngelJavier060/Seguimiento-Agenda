@@ -1,6 +1,7 @@
 com\agenda\backend\dto\AdminKpis.class
 com\agenda\backend\entity\Usuario.class
 com\agenda\backend\controller\AlertaController.class
+com\agenda\backend\service\ReporteService$1.class
 com\agenda\backend\entity\AlertaConfig$TipoAlerta.class
 com\agenda\backend\entity\AreaCategoria.class
 com\agenda\backend\repository\TelegramConfigRepository.class

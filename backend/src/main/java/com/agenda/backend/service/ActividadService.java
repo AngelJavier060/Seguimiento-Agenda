@@ -38,13 +38,13 @@ public class ActividadService {
     public List<Actividad> listarPorUsuario() {
         sincronizarVencidas();
         Usuario u = getAuthenticatedUser();
-        return repo.findByUsuarioId(u.getId());
+        return repo.findByUsuarioIdWithUsuario(u.getId());
     }
 
     /** Admin: listar TODAS las actividades */
     public List<Actividad> listarTodas() {
         sincronizarVencidas();
-        return repo.findAll();
+        return repo.findAllWithUsuario();
     }
 
     public Actividad obtenerPorId(Long id) {

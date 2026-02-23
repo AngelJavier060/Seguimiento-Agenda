@@ -35,6 +35,12 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
 
     // ── Queries filtradas por usuario ──
 
+    @Query("SELECT a FROM Actividad a LEFT JOIN FETCH a.usuario")
+    List<Actividad> findAllWithUsuario();
+
+    @Query("SELECT a FROM Actividad a LEFT JOIN FETCH a.usuario WHERE a.usuario.id = :usuarioId")
+    List<Actividad> findByUsuarioIdWithUsuario(Long usuarioId);
+
     List<Actividad> findByUsuarioId(Long usuarioId);
 
     @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.estado NOT IN ('done','cancelled') AND a.fechaLimite < :now")
