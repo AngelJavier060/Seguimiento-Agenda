@@ -15,9 +15,13 @@ services:
     environment:
       # Spring Boot reconoce SPRING_DATASOURCE_* automáticamente
       # y sobrescribe los valores de application.properties
-      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda
+      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda?sslmode=disable
       SPRING_DATASOURCE_USERNAME: seguimiento_user
       SPRING_DATASOURCE_PASSWORD: Javier_Valle21
+      # Pool de conexiones HikariCP
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 2
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 20000
       # Variables de Telegram (descomentar y configurar)
       # TELEGRAM_BOT_TOKEN: tu_token_aqui
       # TELEGRAM_CHAT_ID: tu_chat_id_aqui

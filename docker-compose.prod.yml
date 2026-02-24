@@ -10,9 +10,12 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda
+      SPRING_DATASOURCE_URL: jdbc:postgresql://172.17.0.1:5432/seguimiento_agenda?sslmode=disable
       SPRING_DATASOURCE_USERNAME: seguimiento_user
       SPRING_DATASOURCE_PASSWORD: Javier_Valle21
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 2
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 20000
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
