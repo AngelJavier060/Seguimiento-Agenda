@@ -13,9 +13,14 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   return next(cloned).pipe(
     catchError((err: unknown) => {
-      if (err instanceof HttpErrorResponse && err.status === 401) {
-        auth.logout();
-        router.navigate(['/login']);
+      if (err instanceof HttpErrorResponse) {
+        const isAuthMeRequest = req.url.includes('/auth/me');
+        const isApiRequest = req.url.includes('/api/v1/');
+
+        if (!isAuthMeRequest && isApiRequest && err.status === 401) {
+          auth.logout();
+          router.navigate(['/login']);
+        }
       }
       return throwError(() => err);
     })

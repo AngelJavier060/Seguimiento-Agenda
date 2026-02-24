@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TelegramService } from '../../core/services/alerta.service';
 import { ActividadService } from '../../core/services/actividad.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TelegramConfig, Estadisticas } from '../../core/models/models';
 
 @Component({
@@ -91,12 +92,15 @@ export class ReportesComponent implements OnInit {
     constructor(
         private telegram: TelegramService,
         private actSvc: ActividadService,
-        private toast: ToastService
+        private toast: ToastService,
+        private auth: AuthService
     ) { }
 
     ngOnInit() {
         this.actSvc.estadisticas().subscribe(s => this.stats.set(s));
-        this.telegram.getConfig().subscribe(c => this.config.set(c));
+        if (this.auth.isAdmin()) {
+            this.telegram.getConfig().subscribe(c => this.config.set(c));
+        }
     }
 
     enviar(tipo: string) {

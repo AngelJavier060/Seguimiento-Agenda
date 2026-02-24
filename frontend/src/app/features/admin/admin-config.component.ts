@@ -9,7 +9,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AreaService } from '../../core/services/area.service';
-import { AreaCategoria, Actividad, Estadisticas } from '../../core/models/models';
+import { AreaCategoria, Actividad, Estadisticas, TelegramUserConfig } from '../../core/models/models';
 import { ActividadService } from '../../core/services/actividad.service';
 
 @Component({
@@ -172,7 +172,7 @@ import { ActividadService } from '../../core/services/actividad.service';
             <input class="form-control" placeholder="Nombre" [(ngModel)]="form.nombre" name="nombre">
             <input class="form-control" placeholder="Apellido" [(ngModel)]="form.apellido" name="apellido">
             <input class="form-control" placeholder="Usuario" [(ngModel)]="form.username" name="username" required>
-            <input class="form-control" placeholder="Correo (Gmail)" [(ngModel)]="form.email" name="email" type="email" required>
+            <input class="form-control" placeholder="Correo electrónico" [(ngModel)]="form.email" name="email" type="email" required>
             <input class="form-control" placeholder="Teléfono" [(ngModel)]="form.telefono" name="telefono">
             <select class="form-control" [(ngModel)]="form.role" name="role">
               <option [ngValue]="'USER'">USER</option>
@@ -206,6 +206,41 @@ import { ActividadService } from '../../core/services/actividad.service';
               </tr>
             </tbody>
           </table>
+          <div class="mt-6">
+            <div class="progress-header" style="margin-bottom:8px">
+              <div class="progress-title">Configuración de Telegram por usuario</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Teléfono</th>
+                  <th>Usuario/Canal</th>
+                  <th>Estado</th>
+                  <th style="width:120px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="telegramUsers.length === 0">
+                  <td colspan="5">
+                    <div class="empty-state"><div class="icon">📭</div><p>Sin configuraciones de Telegram</p></div>
+                  </td>
+                </tr>
+                <tr *ngFor="let cfg of telegramUsers">
+                  <td>{{ cfg.usuarioNombre || cfg.usuarioUsername }} {{ cfg.usuarioApellido || '' }}</td>
+                  <td>{{ cfg.phoneNumber || '—' }}</td>
+                  <td>{{ cfg.userOrChannel || '—' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{ 'badge-green': cfg.activo, 'badge-amber': !cfg.activo }">{{ cfg.activo ? 'Activo' : 'Inactivo' }}</span>
+                  </td>
+                  <td class="actions">
+                    <button class="action-btn" title="Editar" (click)="editTelegramUserConfig(cfg); setTab('config')">✏️</button>
+                    <button class="action-btn delete" title="Eliminar" (click)="deleteTelegramUserConfig(cfg)">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -301,6 +336,74 @@ import { ActividadService } from '../../core/services/actividad.service';
               </div>
             </form>
           </section>
+          <section class="card glass-effect p-6 rounded-xl border border-[var(--border-subtle)]">
+            <h2 class="text-lg font-semibold mb-2">Telegram por usuario</h2>
+            <p class="text-sm text-gray-400 mb-4">Asigna número y usuario/canal de Telegram a cada usuario.</p>
+            <form (ngSubmit)="saveTelegramUserConfig()" class="space-y-3">
+              <div class="grid" style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+                <div>
+                  <label class="block text-sm mb-1">Usuario</label>
+                  <select class="w-full px-4 py-3 rounded-xl bg-black/30 border border-[var(--border-subtle)]" [(ngModel)]="telegramUserForm.usuarioId" name="telegramUsuarioId">
+                    <option [ngValue]="null">Seleccione un usuario...</option>
+                    <option *ngFor="let u of usuarios" [ngValue]="u.id">{{ u.nombre || u.username }} {{ u.apellido || '' }} ({{ u.username }})</option>
+                  </select>
+                </div>
+                <div class="flex items-end">
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" [(ngModel)]="telegramUserForm.activo" name="telegramUsuarioActivo"/>
+                    Activo
+                  </label>
+                </div>
+              </div>
+              <div class="grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+                <div>
+                  <label class="block text-sm mb-1">Número telefónico</label>
+                  <input class="w-full px-4 py-3 rounded-xl bg-black/30 border border-[var(--border-subtle)]" [(ngModel)]="telegramUserForm.phoneNumber" name="telegramUsuarioPhone" placeholder="Ej: +51999999999"/>
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Usuario o Canal de Telegram</label>
+                  <input class="w-full px-4 py-3 rounded-xl bg-black/30 border border-[var(--border-subtle)]" [(ngModel)]="telegramUserForm.userOrChannel" name="telegramUsuarioChannel" placeholder="Ej: @mi_canal o @mi_usuario"/>
+                </div>
+              </div>
+              <div class="flex gap-3 items-center">
+                <button class="bg-[var(--accent-emerald)] text-white px-4 py-2 rounded-lg" type="submit">{{ telegramUserForm.id ? 'Actualizar' : 'Guardar' }}</button>
+                <button class="bg-white/10 px-4 py-2 rounded-lg" type="button" (click)="clearTelegramUserForm()">Limpiar</button>
+              </div>
+            </form>
+            <div class="mt-6">
+              <h3 class="text-sm font-semibold mb-2">Configuraciones existentes</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Teléfono</th>
+                    <th>Usuario/Canal</th>
+                    <th>Estado</th>
+                    <th style="width:120px"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="telegramUsers.length === 0">
+                    <td colspan="5">
+                      <div class="empty-state"><div class="icon">📭</div><p>Sin configuraciones de Telegram por usuario</p></div>
+                    </td>
+                  </tr>
+                  <tr *ngFor="let cfg of telegramUsers">
+                    <td>{{ cfg.usuarioNombre || cfg.usuarioUsername }} {{ cfg.usuarioApellido || '' }}</td>
+                    <td>{{ cfg.phoneNumber || '—' }}</td>
+                    <td>{{ cfg.userOrChannel || '—' }}</td>
+                    <td>
+                      <button type="button" class="inline-badge" [ngClass]="{ 'badge-green': cfg.activo, 'badge-amber': !cfg.activo }" (click)="toggleTelegramUserActivo(cfg)">{{ cfg.activo ? 'Activo' : 'Inactivo' }}</button>
+                    </td>
+                    <td class="actions">
+                      <button class="action-btn" title="Editar" (click)="editTelegramUserConfig(cfg)">✏️</button>
+                      <button class="action-btn delete" title="Eliminar" (click)="deleteTelegramUserConfig(cfg)">🗑️</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </section>
     </div>
@@ -320,6 +423,14 @@ export class AdminConfigComponent implements OnInit {
   theme: ThemeMode = 'dark';
   sys: SystemConfig = { id: 1, systemName: '', description: '' };
   telegram: any = { botToken: '', chatId: '', activo: false };
+  telegramUsers: TelegramUserConfig[] = [];
+  telegramUserForm: { id: number | null; usuarioId: number | null; phoneNumber: string; userOrChannel: string; activo: boolean } = {
+    id: null,
+    usuarioId: null,
+    phoneNumber: '',
+    userOrChannel: '',
+    activo: true
+  };
   // Áreas / Categorías
   areas: AreaCategoria[] = [];
   nuevaArea = '';
@@ -355,6 +466,7 @@ export class AdminConfigComponent implements OnInit {
     this.theme = this.themeSvc.getTheme();
     this.admin.getSystemConfig().subscribe(cfg => this.sys = cfg);
     this.tg.getConfig().subscribe(cfg => this.telegram = cfg);
+    this.loadTelegramUsers();
     this.cargarAreas();
     const qtab = this.route.snapshot.queryParamMap.get('tab') as any;
     if (qtab) this.activeTab = qtab;
@@ -444,6 +556,75 @@ export class AdminConfigComponent implements OnInit {
   // Telegram
   saveTelegram() { this.tg.saveConfig(this.telegram).subscribe({ next: cfg => { this.telegram = cfg; this.toast.show('Telegram guardado'); }, error: err => this.toast.show(err?.error?.message || 'No se pudo guardar Telegram', 'error') }); }
   testTelegram() { this.tg.testConexion().subscribe({ next: r => this.toast.show(r?.mensaje || 'Prueba enviada'), error: err => this.toast.show(err?.error?.message || 'No se pudo probar Telegram', 'error') }); }
+
+  loadTelegramUsers() {
+    this.tg.getUserConfigs().subscribe({
+      next: d => this.telegramUsers = d,
+      error: err => this.toast.show(err?.error?.message || 'Error cargando configuraciones de Telegram por usuario', 'error')
+    });
+  }
+
+  clearTelegramUserForm() {
+    this.telegramUserForm = { id: null, usuarioId: null, phoneNumber: '', userOrChannel: '', activo: true };
+  }
+
+  editTelegramUserConfig(cfg: TelegramUserConfig) {
+    this.telegramUserForm = {
+      id: cfg.id,
+      usuarioId: cfg.usuarioId,
+      phoneNumber: cfg.phoneNumber || '',
+      userOrChannel: cfg.userOrChannel || '',
+      activo: cfg.activo
+    };
+  }
+
+  saveTelegramUserConfig() {
+    const usuarioId = this.telegramUserForm.usuarioId;
+    if (!usuarioId) {
+      this.toast.show('Seleccione un usuario', 'warning');
+      return;
+    }
+    const payload = {
+      usuarioId,
+      phoneNumber: (this.telegramUserForm.phoneNumber || '').trim() || undefined,
+      userOrChannel: (this.telegramUserForm.userOrChannel || '').trim() || undefined,
+      activo: this.telegramUserForm.activo
+    };
+    this.tg.saveUserConfig(payload).subscribe({
+      next: () => {
+        this.toast.show('Configuración de Telegram guardada');
+        this.clearTelegramUserForm();
+        this.loadTelegramUsers();
+      },
+      error: err => this.toast.show(err?.error?.message || 'No se pudo guardar la configuración de Telegram', 'error')
+    });
+  }
+
+  deleteTelegramUserConfig(cfg: TelegramUserConfig) {
+    if (!confirm(`¿Eliminar configuración de Telegram para ${cfg.usuarioNombre || cfg.usuarioUsername}?`)) return;
+    this.tg.deleteUserConfig(cfg.id).subscribe({
+      next: () => {
+        this.toast.show('Configuración de Telegram eliminada');
+        this.loadTelegramUsers();
+        if (this.telegramUserForm.id === cfg.id) {
+          this.clearTelegramUserForm();
+        }
+      },
+      error: err => this.toast.show(err?.error?.message || 'No se pudo eliminar la configuración de Telegram', 'error')
+    });
+  }
+
+  toggleTelegramUserActivo(cfg: TelegramUserConfig) {
+    this.tg.updateUserActivo(cfg.id, !cfg.activo).subscribe({
+      next: updated => {
+        this.telegramUsers = this.telegramUsers.map(c => c.id === updated.id ? updated : c);
+        if (this.telegramUserForm.id === updated.id) {
+          this.telegramUserForm.activo = updated.activo;
+        }
+      },
+      error: err => this.toast.show(err?.error?.message || 'No se pudo actualizar el estado de Telegram', 'error')
+    });
+  }
 
   // Actividades globales
   loadAllActividades() {

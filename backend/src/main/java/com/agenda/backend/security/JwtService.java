@@ -1,6 +1,7 @@
 package com.agenda.backend.security;
 
 import com.agenda.backend.entity.Role;
+import com.agenda.backend.entity.Usuario;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,21 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public Long extractUserId(String token) {
+        Object uid = extractClaim(token, claims -> claims.get("uid"));
+        if (uid instanceof Number) {
+            return ((Number) uid).longValue();
+        }
+        if (uid instanceof String) {
+            try {
+                return Long.parseLong((String) uid);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -46,8 +62,15 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        if (isTokenExpired(token)) return false;
+        // Si el token tiene uid y el UserDetails es CustomUserDetails, validar por ID
+        Long tokenUid = extractUserId(token);
+        if (tokenUid != null && userDetails instanceof CustomUserDetails) {
+            return tokenUid.equals(((CustomUserDetails) userDetails).getId());
+        }
+        // Fallback: comparar por username
         final String username = extractUsername(token);
-        return (username.equalsIgnoreCase(userDetails.getUsername())) && !isTokenExpired(token);
+        return username != null && username.equalsIgnoreCase(userDetails.getUsername());
     }
 
     private boolean isTokenExpired(String token) {
@@ -58,10 +81,11 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public String generateToken(UserDetails userDetails, Role role) {
+    public String generateToken(Usuario usuario) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role.name());
-        return createToken(claims, userDetails.getUsername());
+        claims.put("role", usuario.getRole().name());
+        claims.put("uid", usuario.getId());
+        return createToken(claims, usuario.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

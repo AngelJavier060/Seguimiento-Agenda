@@ -36,7 +36,7 @@ public class ReporteService {
     public void envioDiario() {
         if (!alertaConfigService.isHabilitada(TipoAlerta.REPORTE_DIARIO))
             return;
-        telegramService.enviarMensaje(generarReporteDiario(), "📅 Reporte Diario");
+        telegramService.enviarMensajeATodosUsuarios(generarReporteDiario(), "📅 Reporte Diario");
     }
 
     // ── SEMANAL: cada Lunes a las 8:00 AM ─────────────────
@@ -44,7 +44,7 @@ public class ReporteService {
     public void envioSemanal() {
         if (!alertaConfigService.isHabilitada(TipoAlerta.REPORTE_SEMANAL))
             return;
-        telegramService.enviarMensaje(generarReporteSemanal(), "📋 Reporte Semanal");
+        telegramService.enviarMensajeATodosUsuarios(generarReporteSemanal(), "📋 Reporte Semanal");
     }
 
     // ── MENSUAL: primer día de cada mes ───────────────────
@@ -52,7 +52,7 @@ public class ReporteService {
     public void envioMensual() {
         if (!alertaConfigService.isHabilitada(TipoAlerta.REPORTE_MENSUAL))
             return;
-        telegramService.enviarMensaje(generarReporteMensual(), "📈 Reporte Mensual");
+        telegramService.enviarMensajeATodosUsuarios(generarReporteMensual(), "📈 Reporte Mensual");
     }
 
     // ══════════════════════════════════════════════════════
@@ -144,7 +144,8 @@ public class ReporteService {
                     prioridadTexto,
                     intervaloHoras);
 
-            boolean enviado = telegramService.enviarMensaje(msg, icono + " Alerta " + tier);
+            Long usuarioId = a.getUsuario() != null ? a.getUsuario().getId() : null;
+            boolean enviado = telegramService.enviarMensajeAUsuario(usuarioId, msg, icono + " Alerta " + tier);
             if (enviado) {
                 a.setUltimaAlertaEnviada(now);
                 actividadRepo.save(a);
@@ -189,7 +190,8 @@ public class ReporteService {
                     diasVencida, diasVencida != 1 ? "s" : "",
                     a.getArea());
 
-            boolean enviado = telegramService.enviarMensaje(msg, "💀 Tarea Vencida");
+            Long usuarioId = a.getUsuario() != null ? a.getUsuario().getId() : null;
+            boolean enviado = telegramService.enviarMensajeAUsuario(usuarioId, msg, "💀 Tarea Vencida");
             if (enviado) {
                 a.setUltimaAlertaEnviada(LocalDateTime.now());
                 actividadRepo.save(a);
@@ -233,7 +235,7 @@ public class ReporteService {
         sb.append("\n━━━━━━━━━━━━━━━━━━━━\n");
         sb.append("⚡ Complete o reprograme estas tareas");
 
-        telegramService.enviarMensaje(sb.toString(), "🔁 Recordatorio Vencidas");
+        telegramService.enviarMensajeATodosUsuarios(sb.toString(), "🔁 Recordatorio Vencidas");
     }
 
     // ══════════════════════════════════════════════════════
@@ -253,7 +255,7 @@ public class ReporteService {
             case "monthly" -> "📈 Reporte Mensual";
             default -> tipo;
         };
-        return telegramService.enviarMensaje(msg, label);
+        return telegramService.enviarMensajeATodosUsuarios(msg, label);
     }
 
     // ══════════════════════════════════════════════════════

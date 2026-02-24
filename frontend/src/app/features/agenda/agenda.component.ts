@@ -22,8 +22,11 @@ import { AuthService } from '../../core/services/auth.service';
         <span class="today-date">{{ todayStr }}</span>
         <div class="user-info" style="display:flex;align-items:center;gap:8px;margin:0 8px;padding:4px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
           <span style="font-size:18px">👤</span>
-          <span style="font-size:13px;font-weight:600;color:var(--text)">{{ displayName() }}</span>
-          <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--accent);color:#fff">{{ userRole() }}</span>
+          <div style="display:flex;flex-direction:column;line-height:1.2">
+            <span style="font-size:13px;font-weight:600;color:var(--text)">{{ displayName() || 'Usuario sin nombre' }}</span>
+            <span style="font-size:11px;color:var(--muted)">ID usuario: {{ user()?.username }}</span>
+          </div>
+          <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--accent);color:#fff">{{ roleLabel() }}</span>
         </div>
         <div class="theme-switcher" style="display:flex;align-items:center;gap:8px;margin:0 12px">
           <div class="theme-dot t-dark" [class.active]="currentTheme==='dark'" (click)="onSetTheme('dark')" title="Oscuro" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #2a2f3a;cursor:pointer"></div>
@@ -295,6 +298,19 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="report-preview">{{ previewMonthly() }}</div>
             <button class="btn btn-ghost btn-sm" (click)="enviarReporte('monthly')">📤 Enviar a Telegram</button>
           </div>
+          <div class="report-card">
+            <h3>📂 Exportar actividades</h3>
+            <p>Selecciona el estado que quieres exportar para el usuario actual.</p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <select class="sort-select" [ngModel]="exportEstado()" (ngModelChange)="exportEstado.set($event)">
+                <option value="all">Todas</option>
+                <option value="done">Completadas</option>
+                <option value="pending">Pendientes por gestionar</option>
+              </select>
+              <button class="btn btn-primary btn-sm" (click)="descargarExcel()">⬇️ Descargar Excel</button>
+              <button class="btn btn-ghost btn-sm" (click)="descargarPdf()">⬇️ Descargar PDF</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -332,6 +348,34 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </section>
     </main>
+
+    <!-- FLOATING DEADLINE ALERTS -->
+    @if (showFloatingAlerts() && activeTab==='agenda' && floatingAlerts().length > 0) {
+      <div style="position:fixed;right:20px;bottom:20px;max-width:320px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.35);padding:10px 12px;z-index:9999;font-size:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>🔔</span>
+            <div style="display:flex;flex-direction:column">
+              <span style="font-weight:600">Plazos próximos a vencer</span>
+              <span style="color:var(--muted)">Revisa estas actividades antes del cierre</span>
+            </div>
+          </div>
+          <button type="button" (click)="closeFloatingAlerts()" style="border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto">
+          @for (t of floatingAlerts(); track t.id) {
+            <div style="padding:6px 8px;border-radius:8px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.35);display:flex;flex-direction:column;gap:2px">
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.nombre }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;color:var(--muted)">
+                <span class="inline-badge">{{ t.area }}</span>
+                <span class="time-chip">{{ t.estado==='overdue' ? 'Vencida hace ' + absDays(t.fechaLimite) + 'd' : 'Faltan ' + (daysUntil(t.fechaLimite) || 0) + 'd' }}</span>
+                <span class="priority" [class]="t.prioridad">{{ prioridadLabel(t.prioridad) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     <!-- MODAL -->
     <div class="modal-overlay" [class.open]="modalOpen" (click)="onOverlayClick($event)">
@@ -420,6 +464,8 @@ export class AgendaComponent implements OnInit {
     histEstado = signal<'all'|'done'|'overdue'>('all');
     urgentThresholdDays = signal<number>(3);
     urgentMaxItems = signal<number>(5);
+    exportEstado = signal<'all'|'done'|'pending'>('all');
+    showFloatingAlerts = signal<boolean>(true);
     currentTheme: ThemeMode = 'dark';
     // Recurrencia (solo UI/cliente en Opción A)
     isRecurring = false;
@@ -429,9 +475,11 @@ export class AgendaComponent implements OnInit {
     recPreview: string = '';
     recDays: number[] = Array.from({ length: 28 }, (_, i) => i + 1);
 
-    /** Nombre del usuario logueado */
+    /** Nombre e identificación del usuario logueado */
+    user = computed(() => this.auth.user());
     displayName = computed(() => this.auth.displayName());
     userRole = computed(() => this.auth.user()?.role || 'USER');
+    roleLabel = computed(() => this.userRole() === 'ADMIN' ? 'Administrador' : 'Usuario');
 
     get todayStr() {
         return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -483,14 +531,14 @@ export class AgendaComponent implements OnInit {
         this.route.queryParamMap.subscribe(p => {
             const t = (p.get('tab') as any) || 'agenda';
             this.activeTab = ['agenda','recurrentes','dashboard','historial','reportes','alertas'].includes(t) ? t : 'agenda';
-            if (this.activeTab === 'alertas') { this.loadAlertas(); this.loadNotificaciones(); }
+            if (this.activeTab === 'alertas') { this.loadAlertasIfAdmin(); }
         });
     }
 
     goTab(tab: 'agenda'|'recurrentes'|'dashboard'|'historial'|'reportes'|'alertas') {
         this.activeTab = tab;
         this.router.navigate([], { relativeTo: this.route, queryParams: { tab }, queryParamsHandling: 'merge' });
-        if (tab === 'alertas') { this.loadAlertas(); this.loadNotificaciones(); }
+        if (tab === 'alertas') { this.loadAlertasIfAdmin(); }
     }
 
     load() {
@@ -605,6 +653,10 @@ export class AgendaComponent implements OnInit {
         return Math.ceil((new Date(dt).getTime() - Date.now()) / 86400000);
     }
 
+    absDays(dt: string) {
+        return Math.abs(this.daysUntil(dt));
+    }
+
     dueDateClass(t: Actividad) {
         if (t.estado === 'overdue') return 'overdue';
         const d = this.daysUntil(t.fechaLimite);
@@ -674,6 +726,8 @@ export class AgendaComponent implements OnInit {
         return [...base].sort((a, b) => score(a) - score(b)).slice(0, this.urgentMaxItems());
     });
 
+    floatingAlerts = computed(() => this.atencionTop());
+
     // Historial helpers
     historialList = computed(() => {
         let list = this.tasks().filter(t => ['done','overdue'].includes(t.estado));
@@ -727,6 +781,31 @@ export class AgendaComponent implements OnInit {
         this.tgSvc.enviarReporte(tipo).subscribe({ next: r => this.toast.show(r?.mensaje || 'Reporte enviado'), error: () => this.toast.show('No se pudo enviar el reporte', 'error') });
     }
 
+    private downloadBlob(blob: Blob, filename: string) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+
+    descargarExcel() {
+        const estado = this.exportEstado();
+        this.svc.exportarExcel(estado).subscribe({
+            next: (blob) => this.downloadBlob(blob, `actividades-${estado}.xlsx`),
+            error: () => this.toast.show('No se pudo descargar el Excel de actividades', 'error')
+        });
+    }
+
+    descargarPdf() {
+        const estado = this.exportEstado();
+        this.svc.exportarPdf(estado).subscribe({
+            next: (blob) => this.downloadBlob(blob, `actividades-${estado}.pdf`),
+            error: () => this.toast.show('No se pudo descargar el PDF de actividades', 'error')
+        });
+    }
+
     get themeName() {
         const map: Record<ThemeMode, string> = { dark: 'Oscuro', light: 'Claro', ocean: 'Océano', corporate: 'Corporativo' };
         return map[this.currentTheme] || 'Oscuro';
@@ -740,13 +819,25 @@ export class AgendaComponent implements OnInit {
     }
 
     // Alertas
-    loadAlertas() { this.alertasSvc.listarAlertas().subscribe({ next: d => this.alertas = d, error: () => this.toast.show('Error cargando alertas', 'error') }); }
-    loadNotificaciones() { this.alertasSvc.listarNotificaciones().subscribe({ next: d => this.notificaciones = d, error: () => this.toast.show('Error cargando notificaciones', 'error') }); }
+    loadAlertasIfAdmin() {
+        if (this.auth.isAdmin()) {
+            this.alertasSvc.listarAlertas().subscribe({ next: d => this.alertas = d, error: () => this.toast.show('Error cargando alertas', 'error') });
+            this.alertasSvc.listarNotificaciones().subscribe({ next: d => this.notificaciones = d, error: () => this.toast.show('Error cargando notificaciones', 'error') });
+        } else {
+            this.alertasSvc.listarNotificaciones().subscribe({ next: d => this.notificaciones = d, error: () => {} });
+        }
+    }
+    loadAlertas() { if (this.auth.isAdmin()) this.alertasSvc.listarAlertas().subscribe({ next: d => this.alertas = d, error: () => {} }); }
+    loadNotificaciones() { this.alertasSvc.listarNotificaciones().subscribe({ next: d => this.notificaciones = d, error: () => {} }); }
     onToggleAlerta(a: AlertaConfig, ev: Event) {
         const checked = (ev.target as HTMLInputElement).checked;
         const prev = a.habilitada;
         a.habilitada = checked;
         this.alertasSvc.actualizarAlerta(a.id, checked).subscribe({ next: () => this.toast.show('Alerta actualizada'), error: () => { a.habilitada = prev; this.toast.show('No se pudo actualizar la alerta', 'error'); } });
+    }
+
+    closeFloatingAlerts() {
+        this.showFloatingAlerts.set(false);
     }
 
     salir() {

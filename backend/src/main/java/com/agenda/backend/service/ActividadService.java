@@ -4,11 +4,15 @@ import com.agenda.backend.dto.ActividadRequest;
 import com.agenda.backend.dto.EstadisticasResponse;
 import com.agenda.backend.entity.Actividad;
 import com.agenda.backend.entity.Actividad.EstadoActividad;
+import com.agenda.backend.entity.Role;
 import com.agenda.backend.entity.Usuario;
+import com.agenda.backend.security.CustomUserDetails;
 import com.agenda.backend.repository.ActividadRepository;
 import com.agenda.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +30,21 @@ public class ActividadService {
     private final ActividadRepository repo;
     private final UsuarioRepository usuarioRepo;
 
-    // ── Obtener usuario autenticado ──────────────────────
+    // ── Obtener usuario autenticado (seguro por ID) ──────
     private Usuario getAuthenticatedUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new NoSuchElementException("Usuario no autenticado");
+        }
+
+        Object principal = auth.getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            Long id = ((CustomUserDetails) principal).getId();
+            return usuarioRepo.findById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado (id): " + id));
+        }
+
+        String username = auth.getName();
         return usuarioRepo.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado: " + username));
     }
@@ -36,20 +52,31 @@ public class ActividadService {
     // ── CRUD (filtrado por usuario) ──────────────────────
 
     public List<Actividad> listarPorUsuario() {
-        sincronizarVencidas();
         Usuario u = getAuthenticatedUser();
         return repo.findByUsuarioIdWithUsuario(u.getId());
     }
 
     /** Admin: listar TODAS las actividades */
     public List<Actividad> listarTodas() {
-        sincronizarVencidas();
         return repo.findAllWithUsuario();
     }
 
     public Actividad obtenerPorId(Long id) {
-        return repo.findById(id)
+        Actividad a = repo.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Actividad no encontrada: " + id));
+
+        Usuario u = getAuthenticatedUser();
+        // ADMIN puede acceder a cualquier actividad
+        if (u.getRole() == Role.ADMIN) {
+            return a;
+        }
+
+        // USER solo puede acceder a sus propias actividades
+        if (a.getUsuario() == null || !a.getUsuario().getId().equals(u.getId())) {
+            throw new AccessDeniedException("No puede acceder a actividades de otros usuarios");
+        }
+
+        return a;
     }
 
     @Transactional
@@ -111,16 +138,14 @@ public class ActividadService {
 
     @Transactional
     public void eliminar(Long id) {
-        if (!repo.existsById(id))
-            throw new NoSuchElementException("Actividad no encontrada: " + id);
-        repo.deleteById(id);
+        Actividad a = obtenerPorId(id);
+        repo.delete(a);
     }
 
     // ── STATS ─────────────────────────────────────────────
 
     /** Stats globales (para admin) */
     public EstadisticasResponse estadisticas() {
-        sincronizarVencidas();
         long total = repo.count();
         long completadas = repo.countByEstado(EstadoActividad.done);
         long vencidas = repo.countByEstado(EstadoActividad.overdue);
@@ -144,7 +169,6 @@ public class ActividadService {
 
     /** Stats filtradas por usuario autenticado */
     public EstadisticasResponse estadisticasPorUsuario() {
-        sincronizarVencidas();
         Usuario u = getAuthenticatedUser();
         Long uid = u.getId();
         long total = repo.countByUsuarioId(uid);

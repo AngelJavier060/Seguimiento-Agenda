@@ -51,6 +51,8 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
 
     long countByUsuarioIdAndEstado(Long usuarioId, Actividad.EstadoActividad estado);
 
+    List<Actividad> findByUsuarioIdAndEstado(Long usuarioId, Actividad.EstadoActividad estado);
+
     @Query("SELECT a FROM Actividad a WHERE a.usuario.id = :uid AND a.prioridad = :prioridad")
     List<Actividad> findByUsuarioIdAndPrioridad(Long uid, Actividad.Prioridad prioridad);
 

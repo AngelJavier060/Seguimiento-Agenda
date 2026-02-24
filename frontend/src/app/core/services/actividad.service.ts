@@ -30,6 +30,16 @@ export class ActividadService {
         return this.http.get<Estadisticas>(`${this.url}/stats/todas`);
     }
 
+    /** Exportar actividades del usuario autenticado filtradas por estado en Excel */
+    exportarExcel(estado: 'all'|'done'|'pending') {
+        return this.http.get(`${this.url}/export/excel`, { responseType: 'blob', params: { estado } });
+    }
+
+    /** Exportar actividades del usuario autenticado filtradas por estado en PDF */
+    exportarPdf(estado: 'all'|'done'|'pending') {
+        return this.http.get(`${this.url}/export/pdf`, { responseType: 'blob', params: { estado } });
+    }
+
     crear(req: ActividadRequest): Observable<Actividad> {
         return this.http.post<Actividad>(this.url, req);
     }

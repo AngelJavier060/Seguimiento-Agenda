@@ -73,6 +73,17 @@ export interface TelegramConfig {
     userOrChannel?: string; // @usuario o @canal
 }
 
+export interface TelegramUserConfig {
+    id: number;
+    usuarioId: number;
+    usuarioUsername: string;
+    usuarioNombre?: string;
+    usuarioApellido?: string;
+    phoneNumber?: string;
+    userOrChannel?: string;
+    activo: boolean;
+}
+
 export interface AreaCategoria {
     id: number;
     nombre: string;

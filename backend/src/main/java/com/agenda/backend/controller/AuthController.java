@@ -28,26 +28,20 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
+        String userOrEmail = req.getUsernameOrEmail() != null ? req.getUsernameOrEmail().trim() : "";
         try {
             Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(req.getUsernameOrEmail(), req.getPassword())
+                    new UsernamePasswordAuthenticationToken(userOrEmail, req.getPassword())
             );
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(401).body(Map.of("message", "Credenciales inválidas"));
         }
 
-        Usuario u = usuarioRepository.findByUsernameIgnoreCase(req.getUsernameOrEmail())
-                .or(() -> usuarioRepository.findByEmailIgnoreCase(req.getUsernameOrEmail()))
+        Usuario u = usuarioRepository.findByUsernameIgnoreCase(userOrEmail)
+                .or(() -> usuarioRepository.findByEmailIgnoreCase(userOrEmail))
                 .orElseThrow();
 
-        String token = jwtService.generateToken(
-                org.springframework.security.core.userdetails.User
-                        .withUsername(u.getUsername())
-                        .password(u.getPassword())
-                        .authorities("ROLE_" + u.getRole().name())
-                        .build(),
-                u.getRole()
-        );
+        String token = jwtService.generateToken(u);
 
         return ResponseEntity.ok(new AuthResponse(token, u.getUsername(), u.getEmail(), u.getRole(), u.getNombre(), u.getApellido()));
     }
@@ -58,8 +52,17 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).build();
         }
-        String username = authentication.getName();
-        Usuario u = usuarioRepository.findByUsernameIgnoreCase(username).orElseThrow();
+
+        Object principal = authentication.getPrincipal();
+        Usuario u;
+        if (principal instanceof com.agenda.backend.security.CustomUserDetails) {
+            Long id = ((com.agenda.backend.security.CustomUserDetails) principal).getId();
+            u = usuarioRepository.findById(id).orElseThrow();
+        } else {
+            String username = authentication.getName();
+            u = usuarioRepository.findByUsernameIgnoreCase(username).orElseThrow();
+        }
+
         return ResponseEntity.ok(new AuthResponse(null, u.getUsername(), u.getEmail(), u.getRole(), u.getNombre(), u.getApellido()));
     }
 }
