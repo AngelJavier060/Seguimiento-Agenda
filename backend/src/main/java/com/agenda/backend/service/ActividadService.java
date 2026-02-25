@@ -193,7 +193,8 @@ public class ActividadService {
     }
 
     // ── SCHEDULED: actualizar estados vencidos ─────────────
-    @Scheduled(fixedDelay = 60_000)
+    // TEMPORALMENTE DESHABILITADO: causa OutOfMemoryError con muchas actividades
+    // @Scheduled(fixedDelay = 60_000)
     @Transactional
     public void sincronizarVencidas() {
         LocalDateTime now = LocalDateTime.now();
