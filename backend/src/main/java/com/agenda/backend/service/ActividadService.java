@@ -224,7 +224,15 @@ public class ActividadService {
 
     // ── Recurrencia helpers ───────────────────────────────
     private void addLog(Actividad a, String msg) {
-        if (a.getHistorial() != null) a.getHistorial().add(msg);
+        if (a.getHistorial() == null) {
+            a.setHistorial(new ArrayList<>());
+        }
+        a.getHistorial().add(msg);
+        
+        // Limitar a los últimos 50 logs para evitar crecimiento descontrolado
+        if (a.getHistorial().size() > 50) {
+            a.getHistorial().remove(0);
+        }
     }
 
     private LocalDateTime calcularSiguienteFecha(Actividad a) {
