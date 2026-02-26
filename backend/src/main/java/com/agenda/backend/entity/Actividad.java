@@ -58,9 +58,14 @@ public class Actividad {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
-    // Recurrencia mensual (opcional)
+    // Recurrencia (opcional)
     @Column(name = "recurrente")
     private Boolean recurrente = false;
+
+    // Tipo de recurrencia: MENSUAL o SEMANAL
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rec_tipo")
+    private TipoRecurrencia recTipo;
 
     // Día específico del mes (1-28). Si es null y recUltimoDia=true, se usa último día del mes
     @Column(name = "rec_dia_mes")
@@ -72,9 +77,18 @@ public class Actividad {
     @Column(name = "rec_hora")
     private LocalTime recHora;
 
-    // Número de meses que dura la recurrencia (0 = sin límite)
+    // Número de meses que dura la recurrencia (0 = sin límite) - para MENSUAL
     @Column(name = "rec_meses")
     private Integer recMeses;
+
+    // Para recurrencia SEMANAL: días de la semana (1=Lun, 2=Mar, ..., 7=Dom)
+    // Formato: "1,3,5" para Lunes, Miércoles, Viernes
+    @Column(name = "rec_dias_semana", length = 20)
+    private String recDiasSemana;
+
+    // Número de semanas que dura la recurrencia (0 = sin límite) - para SEMANAL
+    @Column(name = "rec_semanas")
+    private Integer recSemanas;
 
     // Cantidad de ocurrencias generadas
     @Column(name = "rec_generados")
@@ -101,5 +115,9 @@ public class Actividad {
 
     public enum EstadoActividad {
         pending, inprocess, done, overdue, cancelled
+    }
+
+    public enum TipoRecurrencia {
+        MENSUAL, SEMANAL
     }
 }

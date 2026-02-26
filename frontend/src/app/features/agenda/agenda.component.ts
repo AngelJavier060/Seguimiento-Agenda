@@ -407,26 +407,70 @@ import { AuthService } from '../../core/services/auth.service';
           <input id="f-recurring" type="checkbox" [(ngModel)]="isRecurring" (change)="onRecurringChange()">
           <label for="f-recurring">Tarea Recurrente</label>
         </div>
-        <div id="rec-box" *ngIf="isRecurring" class="card" style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-top:4px;background:var(--surface)">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Día del mes</label>
-              <select class="form-control" [(ngModel)]="recDay" (ngModelChange)="updateRecPreview()">
-                <option [ngValue]="'ultimo'">Último día</option>
-                <option *ngFor="let d of recDays" [ngValue]="d.toString()">{{ d }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Hora</label>
-              <input class="form-control" type="time" [(ngModel)]="recHour" (ngModelChange)="updateRecPreview()">
-            </div>
-            <div class="form-group">
-              <label>Duración (meses)</label>
-              <input class="form-control" type="number" min="0" [(ngModel)]="recMonths">
-              <div class="sub">0 = sin límite</div>
+        <div id="rec-box" *ngIf="isRecurring" class="recurring-config">
+          <!-- Selector de Tipo de Recurrencia -->
+          <div class="rec-type-selector">
+            <button type="button" class="rec-type-btn" [class.active]="recType==='mensual'" (click)="recType='mensual'; updateRecPreview()">
+              📅 Mensual
+            </button>
+            <button type="button" class="rec-type-btn" [class.active]="recType==='semanal'" (click)="recType='semanal'; updateRecPreview()">
+              📆 Semanal
+            </button>
+          </div>
+
+          <!-- CONFIGURACIÓN MENSUAL -->
+          <div *ngIf="recType==='mensual'" class="rec-monthly">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Día del mes</label>
+                <select class="form-control" [(ngModel)]="recDay" (ngModelChange)="updateRecPreview()">
+                  <option [ngValue]="'ultimo'">Último día</option>
+                  <option *ngFor="let d of recDays" [ngValue]="d.toString()">{{ d }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Hora</label>
+                <input class="form-control" type="time" [(ngModel)]="recHour" (ngModelChange)="updateRecPreview()">
+              </div>
+              <div class="form-group">
+                <label>Duración (meses)</label>
+                <input class="form-control" type="number" min="0" [(ngModel)]="recMonths">
+                <div class="sub">0 = sin límite</div>
+              </div>
             </div>
           </div>
-          <div class="sub" id="rec-preview">Primera ocurrencia: <strong>{{ recPreview }}</strong></div>
+
+          <!-- CONFIGURACIÓN SEMANAL -->
+          <div *ngIf="recType==='semanal'" class="rec-weekly">
+            <div class="form-group">
+              <label>Repetir cada:</label>
+              <div class="weekday-selector">
+                <button type="button" *ngFor="let day of weekDayLabels; let i = index"
+                        class="weekday-btn"
+                        [class.active]="recWeekDays[i]"
+                        [class.weekend]="i >= 5"
+                        (click)="toggleWeekDay(i)">
+                  {{ day }}
+                </button>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hora</label>
+                <input class="form-control" type="time" [(ngModel)]="recHour" (ngModelChange)="updateRecPreview()">
+              </div>
+              <div class="form-group">
+                <label>Duración (semanas)</label>
+                <input class="form-control" type="number" min="0" [(ngModel)]="recWeeks" (ngModelChange)="updateRecPreview()">
+                <div class="sub">0 = sin límite</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vista Previa -->
+          <div class="rec-preview">
+            <strong>Vista previa:</strong> {{ recPreview }}
+          </div>
         </div>
         <div class="form-group">
           <label>Área / Categoría</label>
@@ -467,13 +511,23 @@ export class AgendaComponent implements OnInit {
     exportEstado = signal<'all'|'done'|'pending'>('all');
     showFloatingAlerts = signal<boolean>(true);
     currentTheme: ThemeMode = 'dark';
-    // Recurrencia (solo UI/cliente en Opción A)
+    // Recurrencia
     isRecurring = false;
+    recType: 'mensual' | 'semanal' = 'mensual';
+    
+    // Para recurrencia MENSUAL
     recDay: string = 'ultimo';
-    recHour: string = '08:00';
     recMonths: number = 0; // 0 = sin límite
-    recPreview: string = '';
     recDays: number[] = Array.from({ length: 28 }, (_, i) => i + 1);
+    
+    // Para recurrencia SEMANAL
+    recWeekDays: boolean[] = [false, false, false, false, false, false, false]; // Lun-Dom
+    recWeeks: number = 0; // 0 = sin límite
+    weekDayLabels: string[] = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    
+    // Compartido
+    recHour: string = '08:00';
+    recPreview: string = '';
 
     /** Nombre e identificación del usuario logueado */
     user = computed(() => this.auth.user());
@@ -570,12 +624,27 @@ export class AgendaComponent implements OnInit {
         // Prefill recurrencia si aplica
         this.isRecurring = !!t.recurrente;
         if (this.isRecurring) {
-            this.recDay = t.recUltimoDia ? 'ultimo' : (t.recDiaMes != null ? String(t.recDiaMes) : 'ultimo');
+            this.recType = (t as any).recTipo === 'SEMANAL' ? 'semanal' : 'mensual';
             this.recHour = (t.recHora ? t.recHora.substring(0,5) : '08:00');
-            this.recMonths = t.recMeses ?? 0;
+            
+            if (this.recType === 'mensual') {
+                this.recDay = t.recUltimoDia ? 'ultimo' : (t.recDiaMes != null ? String(t.recDiaMes) : 'ultimo');
+                this.recMonths = t.recMeses ?? 0;
+            } else {
+                // Parsear días de la semana: "1,3,5" -> [true, false, true, false, true, false, false]
+                const diasStr = (t as any).recDiasSemana || '';
+                this.recWeekDays = [false, false, false, false, false, false, false];
+                if (diasStr) {
+                    diasStr.split(',').forEach((d: string) => {
+                        const idx = parseInt(d.trim(), 10) - 1;
+                        if (idx >= 0 && idx < 7) this.recWeekDays[idx] = true;
+                    });
+                }
+                this.recWeeks = (t as any).recSemanas ?? 0;
+            }
             this.updateRecPreview();
         } else {
-            this.recDay = 'ultimo'; this.recHour = '08:00'; this.recMonths = 0; this.recPreview = '';
+            this.resetRecurrenceFields();
         }
         this.modalOpen = true;
     }
@@ -588,22 +657,34 @@ export class AgendaComponent implements OnInit {
         if (!this.form.nombre.trim() || !this.form.fechaLimite) {
             this.toast.show('⚠️ Completa los campos obligatorios', 'warning'); return;
         }
-        if (this.isRecurring) {
-            const first = this.calcFirstOccurrence(this.recDay, this.recHour);
+        if (this.isRecurring && this.recType === 'mensual') {
+            const first = this.calcFirstOccurrenceMensual(this.recDay, this.recHour);
             this.form.fechaLimite = first;
         }
         const req: ActividadRequest = { ...this.form } as any;
         if (this.isRecurring) {
             (req as any).recurrente = true;
-            if (this.recDay === 'ultimo') {
-                (req as any).recUltimoDia = true;
-                (req as any).recDiaMes = null;
-            } else {
-                (req as any).recUltimoDia = false;
-                (req as any).recDiaMes = parseInt(this.recDay, 10) || 1;
-            }
+            (req as any).recTipo = this.recType === 'semanal' ? 'SEMANAL' : 'MENSUAL';
             (req as any).recHora = (this.recHour || '08:00') + ':00';
-            (req as any).recMeses = this.recMonths ?? 0;
+            
+            if (this.recType === 'mensual') {
+                if (this.recDay === 'ultimo') {
+                    (req as any).recUltimoDia = true;
+                    (req as any).recDiaMes = null;
+                } else {
+                    (req as any).recUltimoDia = false;
+                    (req as any).recDiaMes = parseInt(this.recDay, 10) || 1;
+                }
+                (req as any).recMeses = this.recMonths ?? 0;
+            } else {
+                // Convertir array de booleanos a string "1,3,5"
+                const selectedDays = this.recWeekDays
+                    .map((selected, idx) => selected ? (idx + 1).toString() : null)
+                    .filter(d => d !== null)
+                    .join(',');
+                (req as any).recDiasSemana = selectedDays;
+                (req as any).recSemanas = this.recWeeks ?? 0;
+            }
         }
         const obs = this.editingId ? this.svc.actualizar(this.editingId, req) : this.svc.crear(req);
         obs.subscribe({
@@ -625,13 +706,33 @@ export class AgendaComponent implements OnInit {
     onRecurringChange() {
         if (this.isRecurring) {
             this.updateRecPreview();
+        } else {
+            this.recPreview = '';
         }
     }
-    updateRecPreview() {
-        const first = this.calcFirstOccurrence(this.recDay, this.recHour);
-        this.recPreview = this.formatDate(first);
+    
+    toggleWeekDay(index: number) {
+        this.recWeekDays[index] = !this.recWeekDays[index];
+        this.updateRecPreview();
     }
-    calcFirstOccurrence(recDay: string, recHour: string) {
+    
+    updateRecPreview() {
+        if (this.recType === 'mensual') {
+            const first = this.calcFirstOccurrenceMensual(this.recDay, this.recHour);
+            this.recPreview = this.formatDate(first);
+        } else {
+            const selectedDays = this.recWeekDays
+                .map((sel, idx) => sel ? this.weekDayLabels[idx] : null)
+                .filter(d => d !== null);
+            if (selectedDays.length === 0) {
+                this.recPreview = 'Selecciona al menos un día';
+            } else {
+                const duracion = this.recWeeks > 0 ? ` durante ${this.recWeeks} semanas` : ' (sin límite)';
+                this.recPreview = `Cada ${selectedDays.join(', ')} a las ${this.recHour}${duracion}`;
+            }
+        }
+    }
+    calcFirstOccurrenceMensual(recDay: string, recHour: string) {
         const now = new Date();
         const [h, m] = (recHour || '08:00').split(':').map(n => +n || 0);
         let year = now.getFullYear();
@@ -685,6 +786,16 @@ export class AgendaComponent implements OnInit {
     estadoLabel(estado: string) {
         const m: Record<string, string> = { done: 'Completada', pending: 'Pendiente', overdue: 'Vencida' };
         return m[estado] || estado;
+    }
+    
+    resetRecurrenceFields() {
+        this.recType = 'mensual';
+        this.recDay = 'ultimo';
+        this.recHour = '08:00';
+        this.recMonths = 0;
+        this.recWeekDays = [false, false, false, false, false, false, false];
+        this.recWeeks = 0;
+        this.recPreview = '';
     }
 
     // Dashboard helpers

@@ -24,10 +24,19 @@ public class ActividadRequest {
     @NotBlank(message = "El área es obligatoria")
     private String area;
 
-    // Recurrencia mensual (opcional)
+    // Recurrencia (opcional)
     private Boolean recurrente = false;
+    private Actividad.TipoRecurrencia recTipo; // MENSUAL o SEMANAL
+    
+    // Para recurrencia MENSUAL
     private Integer recDiaMes; // 1-28 si aplica
     private Boolean recUltimoDia; // true si es el último día del mes
-    private LocalTime recHora; // Hora HH:mm[:ss]
     private Integer recMeses; // 0 = sin límite
+    
+    // Para recurrencia SEMANAL
+    private String recDiasSemana; // "1,3,5" para Lun, Mie, Vie
+    private Integer recSemanas; // 0 = sin límite
+    
+    // Compartido por ambos tipos
+    private LocalTime recHora; // Hora HH:mm[:ss]
 }

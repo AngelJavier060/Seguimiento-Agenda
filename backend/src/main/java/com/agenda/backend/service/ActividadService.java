@@ -17,12 +17,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -94,10 +97,13 @@ public class ActividadService {
                 .build();
         // Recurrencia (si viene)
         a.setRecurrente(Boolean.TRUE.equals(req.getRecurrente()));
+        a.setRecTipo(req.getRecTipo());
         a.setRecDiaMes(req.getRecDiaMes());
         a.setRecUltimoDia(req.getRecUltimoDia());
         a.setRecHora(req.getRecHora());
         a.setRecMeses(req.getRecMeses());
+        a.setRecDiasSemana(req.getRecDiasSemana());
+        a.setRecSemanas(req.getRecSemanas());
         a.setRecGenerados(0);
         a.setRecNextGenerated(false);
         addLog(a, "Creada el " + LocalDateTime.now());
@@ -117,10 +123,13 @@ public class ActividadService {
         }
         // Recurrencia
         a.setRecurrente(Boolean.TRUE.equals(req.getRecurrente()));
+        a.setRecTipo(req.getRecTipo());
         a.setRecDiaMes(req.getRecDiaMes());
         a.setRecUltimoDia(req.getRecUltimoDia());
         a.setRecHora(req.getRecHora());
         a.setRecMeses(req.getRecMeses());
+        a.setRecDiasSemana(req.getRecDiasSemana());
+        a.setRecSemanas(req.getRecSemanas());
         addLog(a, "Editada el " + LocalDateTime.now());
         return repo.save(a);
     }
@@ -236,6 +245,14 @@ public class ActividadService {
     }
 
     private LocalDateTime calcularSiguienteFecha(Actividad a) {
+        if (a.getRecTipo() == Actividad.TipoRecurrencia.SEMANAL) {
+            return calcularSiguienteFechaSemanal(a);
+        } else {
+            return calcularSiguienteFechaMensual(a);
+        }
+    }
+
+    private LocalDateTime calcularSiguienteFechaMensual(Actividad a) {
         LocalDateTime base = a.getFechaLimite() != null ? a.getFechaLimite() : LocalDateTime.now();
         LocalDateTime nextBase = base.plusMonths(1);
         YearMonth ym = YearMonth.of(nextBase.getYear(), nextBase.getMonth());
@@ -250,9 +267,51 @@ public class ActividadService {
         return LocalDateTime.of(ym.getYear(), ym.getMonth(), day, hora.getHour(), hora.getMinute());
     }
 
+    private LocalDateTime calcularSiguienteFechaSemanal(Actividad a) {
+        LocalDateTime base = a.getFechaLimite() != null ? a.getFechaLimite() : LocalDateTime.now();
+        String diasSemana = a.getRecDiasSemana();
+        if (diasSemana == null || diasSemana.isEmpty()) {
+            return base.plusWeeks(1);
+        }
+        
+        // Parsear días de la semana: "1,3,5" -> [1, 3, 5]
+        List<Integer> dias = Arrays.stream(diasSemana.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Integer::parseInt)
+                .sorted()
+                .collect(Collectors.toList());
+        
+        if (dias.isEmpty()) {
+            return base.plusWeeks(1);
+        }
+        
+        // Buscar el siguiente día de la semana que coincida
+        LocalDateTime siguiente = base.plusDays(1);
+        int maxIteraciones = 7; // Máximo una semana de búsqueda
+        int iteraciones = 0;
+        
+        while (iteraciones < maxIteraciones) {
+            int diaSemana = siguiente.getDayOfWeek().getValue(); // 1=Lun, 7=Dom
+            if (dias.contains(diaSemana)) {
+                break;
+            }
+            siguiente = siguiente.plusDays(1);
+            iteraciones++;
+        }
+        
+        // Aplicar la hora configurada
+        LocalTime hora = a.getRecHora() != null ? a.getRecHora() : LocalTime.of(8, 0);
+        return siguiente.with(hora);
+    }
+
     private void generarSiguienteOcurrencia(Actividad a, boolean porCompletar) {
         if (!Boolean.TRUE.equals(a.getRecurrente())) return;
-        Integer limite = a.getRecMeses();
+        
+        // Verificar límite según el tipo de recurrencia
+        Integer limite = (a.getRecTipo() == Actividad.TipoRecurrencia.SEMANAL) 
+                ? a.getRecSemanas() 
+                : a.getRecMeses();
         int generadosPrev = a.getRecGenerados() != null ? a.getRecGenerados() : 0;
         if (limite != null && limite > 0 && generadosPrev >= limite) {
             addLog(a, "Recurrencia finalizada");
@@ -270,10 +329,13 @@ public class ActividadService {
                 .build();
         // Copiar configuración de recurrencia
         b.setRecurrente(true);
+        b.setRecTipo(a.getRecTipo());
         b.setRecDiaMes(a.getRecDiaMes());
         b.setRecUltimoDia(a.getRecUltimoDia());
         b.setRecHora(a.getRecHora());
         b.setRecMeses(a.getRecMeses());
+        b.setRecDiasSemana(a.getRecDiasSemana());
+        b.setRecSemanas(a.getRecSemanas());
         b.setRecGenerados(generadosPrev + 1);
         b.setRecNextGenerated(false);
         addLog(a, "Generada automáticamente la siguiente ocurrencia #" + (generadosPrev + 1) + " para el " + siguienteFecha);
