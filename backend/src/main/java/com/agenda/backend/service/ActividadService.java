@@ -33,6 +33,7 @@ public class ActividadService {
 
     private final ActividadRepository repo;
     private final UsuarioRepository usuarioRepo;
+    private final N8nWebhookService n8nWebhookService;
 
     // ── Obtener usuario autenticado (seguro por ID) ──────
     private Usuario getAuthenticatedUser() {
@@ -107,7 +108,9 @@ public class ActividadService {
         a.setRecGenerados(0);
         a.setRecNextGenerated(false);
         addLog(a, "Creada el " + LocalDateTime.now());
-        return repo.save(a);
+        Actividad saved = repo.save(a);
+        n8nWebhookService.actividadCreada(saved);
+        return saved;
     }
 
     @Transactional
@@ -131,7 +134,9 @@ public class ActividadService {
         a.setRecDiasSemana(req.getRecDiasSemana());
         a.setRecSemanas(req.getRecSemanas());
         addLog(a, "Editada el " + LocalDateTime.now());
-        return repo.save(a);
+        Actividad saved = repo.save(a);
+        n8nWebhookService.actividadActualizada(saved);
+        return saved;
     }
 
     @Transactional
@@ -141,6 +146,7 @@ public class ActividadService {
         a.setFechaFinalizacion(LocalDateTime.now());
         addLog(a, "Completada el " + a.getFechaFinalizacion());
         repo.save(a);
+        n8nWebhookService.actividadCompletada(a);
         // Generar siguiente ocurrencia si aplica
         generarSiguienteOcurrencia(a, true);
         return a;
@@ -210,8 +216,10 @@ public class ActividadService {
         List<Actividad> overdue = repo.findOverdue(now);
         for (Actividad a : overdue) {
             if (a.getEstado() == EstadoActividad.done) continue;
+            if (a.getEstado() == EstadoActividad.overdue) continue;
             a.setEstado(EstadoActividad.overdue);
             addLog(a, "Vencida automáticamente el " + now);
+            n8nWebhookService.actividadVencidaAuto(a);
             // Si es recurrente y aún no se generó la siguiente, generar
             if (Boolean.TRUE.equals(a.getRecurrente()) && !Boolean.TRUE.equals(a.getRecNextGenerated())) {
                 generarSiguienteOcurrencia(a, false);
