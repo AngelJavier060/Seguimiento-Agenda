@@ -420,7 +420,7 @@ export class AdminConfigComponent implements OnInit {
   editingId: number | null = null;
   form: UsuarioRequest = { username: '', email: '', role: 'USER', password: '' };
 
-  theme: ThemeMode = 'dark';
+  theme: ThemeMode = 'corporate';
   sys: SystemConfig = { id: 1, systemName: '', description: '' };
   telegram: any = { botToken: '', chatId: '', activo: false };
   telegramUsers: TelegramUserConfig[] = [];

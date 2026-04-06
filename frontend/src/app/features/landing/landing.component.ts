@@ -7,200 +7,183 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-  <div class="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
-    <!-- Header -->
-    <header class="sticky top-0 z-30 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center gap-2">
-            <div class="bg-primary p-1.5 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-white text-xl">query_stats</span>
+  <div class="bg-surface text-on-surface font-body selection:bg-primary/30 min-h-screen">
+
+  <nav class="fixed top-0 w-full z-50 bg-[#121414]/60 backdrop-blur-3xl">
+    <div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+      <div class="text-xl font-bold tracking-tighter text-[#e2e2e2] font-headline">
+        Improvements Solutions
+      </div>
+      <div class="hidden md:flex space-x-8 items-center">
+        <a class="font-headline tracking-tight font-semibold text-[#e2e2e2] opacity-80 hover:opacity-100 transition-opacity hover:text-[#72d6dc]" href="#">Soluciones</a>
+        <a class="font-headline tracking-tight font-semibold text-[#e2e2e2] opacity-80 hover:opacity-100 transition-opacity hover:text-[#72d6dc]" href="#">Precios</a>
+        <a class="font-headline tracking-tight font-semibold text-[#e2e2e2] opacity-80 hover:opacity-100 transition-opacity hover:text-[#72d6dc]" routerLink="/info">Recursos</a>
+        <a class="font-headline tracking-tight font-semibold text-[#e2e2e2] opacity-80 hover:opacity-100 transition-opacity hover:text-[#72d6dc]" href="#contacto">Contacto</a>
+      </div>
+
+      <div class="flex items-center gap-4 relative" (click)="$event.stopPropagation()">
+        <button (click)="toggleIntranet()" class="px-6 py-2 rounded-full font-headline font-semibold text-sm transition-transform scale-95 active:scale-90 bg-primary-container text-on-primary-container">
+          Intranet
+        </button>
+
+        <div *ngIf="intranetOpen" class="absolute right-0 top-full mt-3 w-60 rounded-xl bg-surface-container-high border border-outline-variant/20 shadow-2xl overflow-hidden">
+          <a routerLink="/login" (click)="closeIntranet()" class="flex items-center gap-3 px-5 py-4 hover:bg-surface-container-highest transition-colors">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+            <div class="flex flex-col">
+              <span class="font-headline font-bold text-on-surface">Administrador</span>
+              <span class="text-xs text-on-surface-variant">Gestión de sistema</span>
             </div>
-            <span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Improvements Solutions</span>
-          </div>
-
-          <nav class="hidden md:flex space-x-8">
-            <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Soluciones</a>
-            <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Precios</a>
-            <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" routerLink="/info">Recursos</a>
-            <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Contacto</a>
-          </nav>
-
-          <div class="relative" (click)="$event.stopPropagation()">
-            <button (click)="toggleIntranet()" class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm">
-              <span class="material-symbols-outlined text-[20px]">vpn_lock</span>
-              <span>Intranet</span>
-              <span class="material-symbols-outlined text-[18px]">expand_more</span>
-            </button>
-            <div *ngIf="intranetOpen" class="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-slate-900 shadow-xl ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 dark:divide-slate-800">
-              <div class="py-1">
-                <a routerLink="/login" (click)="closeIntranet()" class="flex items-center px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <span class="material-symbols-outlined mr-3 text-primary" style="font-variation-settings: 'FILL' 1;">shield_person</span>
-                  <div class="flex flex-col">
-                    <span class="font-bold">Administrador</span>
-                    <span class="text-xs text-slate-500">Gestión de sistema</span>
-                  </div>
-                </a>
-                <a routerLink="/login" (click)="closeIntranet()" class="flex items-center px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <span class="material-symbols-outlined mr-3 text-primary">person</span>
-                  <div class="flex flex-col">
-                    <span class="font-bold">Usuarios</span>
-                    <span class="text-xs text-slate-500">Panel de actividades</span>
-                  </div>
-                </a>
-              </div>
+          </a>
+          <a routerLink="/login" (click)="closeIntranet()" class="flex items-center gap-3 px-5 py-4 hover:bg-surface-container-highest transition-colors">
+            <span class="material-symbols-outlined text-primary">person</span>
+            <div class="flex flex-col">
+              <span class="font-headline font-bold text-on-surface">Usuarios</span>
+              <span class="text-xs text-on-surface-variant">Panel de actividades</span>
             </div>
-          </div>
-
+          </a>
         </div>
       </div>
-    </header>
+    </div>
+  </nav>
 
-    <!-- Main -->
-    <main class="flex-grow">
-      <!-- Hero -->
-      <section class="relative py-20 lg:py-32 overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div class="max-w-2xl">
-              <div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 mb-6">Nuevas actualizaciones disponibles v2.4</div>
-              <h1 class="text-4xl lg:text-6xl font-extrabold text-slate-900 dark:text-white leading-[1.1] mb-6">Optimiza tu rendimiento y toma el control de tus actividades</h1>
-              <p class="text-lg text-slate-600 dark:text-slate-400 mb-10 leading-relaxed">Una plataforma profesional diseñada para el seguimiento preciso, alertas inteligentes y la mejora continua de tus procesos corporativos. Todo en un solo lugar con Improvements Solutions.</p>
-              <div class="flex flex-wrap gap-4">
-                <a routerLink="/agenda" class="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
-                  Comenzar ahora
-                  <span class="material-symbols-outlined">arrow_forward</span>
-                </a>
-                <a routerLink="/dashboard" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                  Ver Demo
-                </a>
-              </div>
-            </div>
-            <div class="relative">
-              <div class="absolute -top-12 -left-12 w-64 h-64 bg-primary/20 rounded-full blur-3xl opacity-30"></div>
-              <div class="absolute -bottom-12 -right-12 w-64 h-64 bg-primary/40 rounded-full blur-3xl opacity-20"></div>
-              <div class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC72CqtIgQHRmAVlxiO8xqyKcNi1grypOZWOR_VSdjIHIC3uiox_u1y0_VzPp0nS8NehyaJBAOHuhpI6JukNUSa9xm4QKl9Fi_y9QfF5nA38k1uWBoT5XIXTh9VXJzvlCqS6vLYN4AFTKlHMJiqYMqZfSlrvm4-iD6PUL2vfGI5xb95XRJmUJJplTafHUoA7YN97Ki8TItL8gnghkmpulJhizJ0b_-Xfb_uRNlaojlT1v2Mhrmmxh-R4P-5j6x8MTPQJvopeV6UuJTJ" alt="Plataforma de análisis" class="w-full h-auto object-cover"/>
-              </div>
-            </div>
+  <main>
+    <section class="relative pt-32 pb-20 overflow-hidden bg-surface">
+      <div class="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-7 z-10">
+          <span class="inline-block px-3 py-1 mb-6 text-xs font-bold tracking-widest uppercase text-primary border border-primary/20 rounded-full">
+            Enterprise Efficiency
+          </span>
+          <h1 class="text-5xl lg:text-[3.5rem] leading-[1.1] font-headline font-extrabold tracking-tight text-on-surface mb-8">
+            Optimiza tu rendimiento y <span class="hero-gradient-text">toma el control</span> de tus actividades
+          </h1>
+          <p class="text-lg text-on-surface-variant max-w-xl mb-10 leading-relaxed">
+            Una plataforma profesional diseñada para el seguimiento preciso, alertas inteligentes y la mejora continua de tus procesos corporativos. Todo en un solo lugar con Improvements Solutions.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a routerLink="/agenda" class="px-8 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/10">
+              Comenzar ahora
+            </a>
+            <a routerLink="/dashboard" class="px-8 py-4 border border-outline-variant/40 hover:bg-surface-container-high text-on-surface font-bold rounded-full transition-all active:scale-95">
+              Ver Demo
+            </a>
           </div>
         </div>
-      </section>
-
-      <!-- Solutions -->
-      <section class="py-20 bg-slate-50 dark:bg-slate-900/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center max-w-3xl mx-auto mb-16">
-            <h2 class="text-primary font-bold tracking-wider uppercase text-sm mb-3">Soluciones Inteligentes</h2>
-            <h3 class="text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">Herramientas diseñadas para equipos de alto desempeño</h3>
-            <p class="text-slate-600 dark:text-slate-400">Nuestra suite incluye todo lo necesario para monitorear, alertar y mejorar la eficiencia operativa de tu organización.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div class="group bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-                <span class="material-symbols-outlined text-primary group-hover:text-white text-3xl">event_upcoming</span>
-              </div>
-              <h4 class="text-xl font-bold mb-3 text-slate-900 dark:text-white">Recordatorios</h4>
-              <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Nunca pierdas una fecha límite con nuestro sistema de notificaciones inteligentes y programables.</p>
-            </div>
-
-            <div class="group bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-                <span class="material-symbols-outlined text-primary group-hover:text-white text-3xl">notification_important</span>
-              </div>
-              <h4 class="text-xl font-bold mb-3 text-slate-900 dark:text-white">Avisos y Alertas</h4>
-              <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Recibe alertas críticas en tiempo real a través de múltiples canales ante cualquier eventualidad del sistema.</p>
-            </div>
-
-            <div class="group bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-                <span class="material-symbols-outlined text-primary group-hover:text-white text-3xl">analytics</span>
-              </div>
-              <h4 class="text-xl font-bold mb-3 text-slate-900 dark:text-white">Seguimiento de Actividades</h4>
-              <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Monitorea el progreso de cada actividad con registros detallados y trazabilidad completa de acciones.</p>
-            </div>
-
-            <div class="group bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-                <span class="material-symbols-outlined text-primary group-hover:text-white text-3xl">trending_up</span>
-              </div>
-              <h4 class="text-xl font-bold mb-3 text-slate-900 dark:text-white">Mejora Continua</h4>
-              <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Analiza KPIs históricos para identificar cuellos de botella y optimizar el rendimiento de tu equipo.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Visuals & bullets -->
-      <section class="py-20 bg-white dark:bg-background-dark">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex flex-col lg:flex-row gap-16 items-center">
-            <div class="w-full lg:w-1/2 order-2 lg:order-1">
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-4">
-                  <div class="rounded-2xl overflow-hidden shadow-lg h-64">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoInyOL2z_3qTLXJEcFd7Wtj0YqFQcScclBu7HoBBMn6UASnNEPeQ3QZ30GrpRGsGIKJE2LTmVqlx3azWCP_4S7y3BxKM7dJdEe6lFRl_xeqlrN_RJpEXhBLUXunxhACuNe4SJ5WtnPN3ovOOuIABkcRshPB-WJCPbJoaS34Fi2zwuviAWQ2_f4WURqgXGbmfDdDk0wekYUmF0KhDsCfAkz6_Z6TkuRn7lIHbsGu86piPcwebsb6D18Zh2EzRIBUYv-BOqMqsDGRPq" alt="Tech Pattern 1" class="w-full h-full object-cover"/>
-                  </div>
-                  <div class="rounded-2xl overflow-hidden shadow-lg h-48 bg-primary/20 p-8 flex flex-col justify-end">
-                    <span class="text-4xl font-extrabold text-primary">99.9%</span>
-                    <span class="text-slate-600 font-medium">Uptime del sistema</span>
-                  </div>
-                </div>
-                <div class="space-y-4 mt-8">
-                  <div class="rounded-2xl overflow-hidden shadow-lg h-48 bg-slate-900 p-8 flex flex-col justify-end">
-                    <span class="text-4xl font-extrabold text-white">+5k</span>
-                    <span class="text-slate-300 font-medium">Usuarios activos</span>
-                  </div>
-                  <div class="rounded-2xl overflow-hidden shadow-lg h-64">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYGot2-B0q-i10JPVVYu0_IXkpb4eP7I7Mn2XQlK8qgqoeOPCs6er9jzTXa9ipE1E6Cwk7KWphu7CGMTliQ-Tf4rnLQIe5XJHkSfDqRbFb8-Slh0g2isYZRdZq4PFqubd9uuNTBWKwtZ8dKAlc8zq0zN0zlf6Hl4olJ0TJ7LysThK-wWT5fNCoxQUo9RCUUAJy_qi8RB9u8lIA0ZUXfBK8NCxOYexmZMNUFbrOQe654HX76A5ZwQ40zl7bLmtdFebO_HM-Pf8VerGL" alt="Colaboración" class="w-full h-full object-cover"/>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="w-full lg:w-1/2 order-1 lg:order-2">
-              <h3 class="text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-6">Visualiza el éxito de tus operaciones</h3>
-              <p class="text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">Nuestra interfaz intuitiva permite que tanto administradores como usuarios finales puedan operar sin fricciones, asegurando una adopción rápida en toda la compañía.</p>
-              <ul class="space-y-4">
-                <li class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-primary font-bold">check_circle</span>
-                  <span class="font-medium text-slate-700 dark:text-slate-200">Seguridad de grado empresarial para tus datos</span>
-                </li>
-                <li class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-primary font-bold">check_circle</span>
-                  <span class="font-medium text-slate-700 dark:text-slate-200">Personalización completa de alertas por departamento</span>
-                </li>
-                <li class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-primary font-bold">check_circle</span>
-                  <span class="font-medium text-slate-700 dark:text-slate-200">API robusta para integración con sistemas existentes</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-8">
-          <div class="flex items-center gap-2">
-            <div class="bg-slate-200 dark:bg-slate-800 p-1.5 rounded flex items-center justify-center">
-              <span class="material-symbols-outlined text-slate-700 dark:text-slate-400 text-sm">query_stats</span>
-            </div>
-            <span class="font-bold text-slate-900 dark:text-white">Improvements Solutions</span>
-          </div>
-          <p class="text-slate-500 text-sm">© 2026 Improvements Solutions. Todos los derechos reservados.</p>
-          <div class="flex gap-6 text-slate-500">
-            <a href="#" class="hover:text-primary transition-colors"><span class="material-symbols-outlined">public</span></a>
-            <a href="#" class="hover:text-primary transition-colors"><span class="material-symbols-outlined">shield</span></a>
-            <a href="#" class="hover:text-primary transition-colors"><span class="material-symbols-outlined">description</span></a>
+        <div class="lg:col-span-5 relative">
+          <div class="absolute -top-20 -right-20 w-80 h-80 bg-primary/10 blur-[100px] rounded-full"></div>
+          <div class="relative aspect-square rounded-xl overflow-hidden shadow-2xl">
+            <img class="w-full h-full object-cover mask-fade-bottom" alt="Modern 3D render of a minimalist glass architectural structure with sharp edges and subtle teal reflections on a dark studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHmD5kh9sKFLcjWw8Ov1_sFw_7aKjFFGBv_gQofwVAKRFh1oBdvk3DwOKwhMrV26boynagIyJ6iOnN_68MpPFbQ_jB2E3O742kA_XLxoG4Fn4Uhns5DtPa0LZok6wPYKNpY_OXV0Iu5wcMKmBvcphZhgxqbmgbOVfi6cMkFJwfv5lA-6pJbRpuww6JIOuUplv_HaVaMaxqMPmUqknbWLvc_O5LLg-ErM7pHv7_MHW9tMkWXYaxymqOj0dDSxUkqBZqSAoKB3ammlbQ"/>
           </div>
         </div>
       </div>
-    </footer>
+    </section>
+
+    <section class="py-32 bg-surface-container-low">
+      <div class="max-w-7xl mx-auto px-8">
+        <div class="mb-20">
+          <span class="text-primary font-bold tracking-[0.2em] text-xs uppercase mb-4 block">Capacidades</span>
+          <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight max-w-2xl">
+            Herramientas diseñadas para equipos de alto desempeño
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="group p-8 rounded-xl bg-surface-container-high transition-all duration-300 hover:bg-surface-container-highest hover:-translate-y-2 border border-outline-variant/10">
+            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-surface-container-lowest text-primary mb-6 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined text-2xl">notifications_active</span>
+            </div>
+            <h3 class="text-xl font-headline font-bold text-on-surface mb-4">Recordatorios</h3>
+            <p class="text-on-surface-variant leading-relaxed text-sm">
+              Nunca pierdas una fecha límite con nuestro sistema de notificaciones inteligentes y programables.
+            </p>
+          </div>
+          <div class="group p-8 rounded-xl bg-surface-container-high transition-all duration-300 hover:bg-surface-container-highest hover:-translate-y-2 border border-outline-variant/10">
+            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-surface-container-lowest text-primary mb-6 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined text-2xl">warning</span>
+            </div>
+            <h3 class="text-xl font-headline font-bold text-on-surface mb-4">Avisos y Alertas</h3>
+            <p class="text-on-surface-variant leading-relaxed text-sm">
+              Recibe alertas críticas en tiempo real a través de múltiples canales ante cualquier eventualidad del sistema.
+            </p>
+          </div>
+          <div class="group p-8 rounded-xl bg-surface-container-high transition-all duration-300 hover:bg-surface-container-highest hover:-translate-y-2 border border-outline-variant/10">
+            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-surface-container-lowest text-primary mb-6 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined text-2xl">data_exploration</span>
+            </div>
+            <h3 class="text-xl font-headline font-bold text-on-surface mb-4">Seguimiento</h3>
+            <p class="text-on-surface-variant leading-relaxed text-sm">
+              Monitorea el progreso de cada actividad con registros detallados y trazabilidad completa de acciones.
+            </p>
+          </div>
+          <div class="group p-8 rounded-xl bg-surface-container-high transition-all duration-300 hover:bg-surface-container-highest hover:-translate-y-2 border border-outline-variant/10">
+            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-surface-container-lowest text-primary mb-6 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined text-2xl">trending_up</span>
+            </div>
+            <h3 class="text-xl font-headline font-bold text-on-surface mb-4">Mejora Continua</h3>
+            <p class="text-on-surface-variant leading-relaxed text-sm">
+              Analiza KPIs históricos para identificar cuellos de botella y optimizar el rendimiento de tu equipo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-32 bg-surface">
+      <div class="max-w-7xl mx-auto px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[600px]">
+          <div class="lg:col-span-8 bg-surface-container-low rounded-xl p-10 flex flex-col justify-between overflow-hidden relative group">
+            <div class="relative z-10">
+              <h3 class="text-3xl font-headline font-bold text-on-surface mb-4">Visualización Integral</h3>
+              <p class="text-on-surface-variant max-w-md">Una interfaz diseñada para la claridad absoluta, reduciendo la carga cognitiva y maximizando la toma de decisiones.</p>
+            </div>
+            <div class="relative mt-12 lg:mt-0 lg:absolute lg:right-0 lg:bottom-0 w-full lg:w-3/4">
+              <img class="rounded-tl-xl shadow-2xl transition-transform group-hover:scale-105 duration-700" alt="High-tech data dashboard with glowing neon blue lines, minimalist graphs, and digital metrics on a dark glass surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-lTyrWCa8Q2pMTpkMgVgg3JuBlw58ZTKl4EgVclvyJtY9Uj2b2mw1c8sljzGKKi2aeqks2N_nFciR99jAPjfylxOmsjQPAQvqrjf6bZqytBsATf9fLI3AmKmIgcGhlLPpc0M7fn4lXVjynVMZsvugke-LuQ5gySR7vBPnqDt_3FqBaIw-w93ICL283qVub0YjnGo1mMR1GyFps6JMajF-eOVN0-bsGSa9QHRREhdbF4s0JbVu7aPOvvBTDtBQgB0lUERaUXYjwUmo"/>
+            </div>
+          </div>
+          <div class="lg:col-span-4 grid grid-rows-2 gap-6">
+            <div class="bg-primary-container text-on-primary-container p-8 rounded-xl flex flex-col justify-center">
+              <span class="material-symbols-outlined text-4xl mb-4" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+              <h4 class="text-xl font-bold font-headline mb-2">Seguridad Grado Enterprise</h4>
+              <p class="text-sm opacity-80">Encriptación de punto a punto y protocolos de seguridad de nivel bancario.</p>
+            </div>
+            <div class="bg-surface-container-high p-8 rounded-xl flex flex-col justify-center border border-outline-variant/10">
+              <h4 class="text-3xl font-bold font-headline text-primary mb-1">99.9%</h4>
+              <p class="text-on-surface font-semibold mb-2">Uptime Garantizado</p>
+              <p class="text-on-surface-variant text-sm">Disponibilidad crítica para operaciones globales sin interrupciones.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="contacto" class="w-full py-12 border-t border-[#3e4949]/15 bg-[#0d0f0f]">
+    <div class="flex flex-col md:flex-row justify-between items-center px-12 max-w-7xl mx-auto gap-8">
+      <div class="flex flex-col items-center md:items-start gap-4">
+        <div class="text-lg font-bold text-[#e2e2e2] opacity-50 font-headline">
+          Improvements Solutions
+        </div>
+        <p class="text-[#e2e2e2]/60 font-body text-sm text-center md:text-left">
+          © 2026 Improvements Solutions. All rights reserved.
+        </p>
+      </div>
+
+      <div class="flex gap-8 flex-wrap justify-center">
+        <a class="text-[#e2e2e2]/60 hover:text-[#72d6dc] transition-colors font-body text-sm" href="#">Privacidad</a>
+        <a class="text-[#e2e2e2]/60 hover:text-[#72d6dc] transition-colors font-body text-sm" href="#">Términos</a>
+        <a class="text-[#e2e2e2]/60 hover:text-[#72d6dc] transition-colors font-body text-sm" href="#">Cookies</a>
+        <a class="text-[#e2e2e2]/60 hover:text-[#72d6dc] transition-colors font-body text-sm" href="mailto:improvementsolutionsqhse&#64;gmail.com">improvementsolutionsqhse&#64;gmail.com</a>
+        <a class="text-[#e2e2e2]/60 hover:text-[#72d6dc] transition-colors font-body text-sm" href="https://wa.me/593962337363" target="_blank" rel="noopener noreferrer">WhatsApp 0962337363</a>
+      </div>
+
+      <div class="flex gap-4">
+        <a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="mailto:improvementsolutionsqhse&#64;gmail.com">
+          <span class="material-symbols-outlined text-xl">mail</span>
+        </a>
+        <a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="https://wa.me/593962337363" target="_blank" rel="noopener noreferrer">
+          <span class="material-symbols-outlined text-xl">chat</span>
+        </a>
+      </div>
+    </div>
+  </footer>
   </div>
   `,
 })

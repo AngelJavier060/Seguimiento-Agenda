@@ -7,7 +7,7 @@ export class ThemeService {
   private readonly key = 'theme_mode';
 
   getTheme(): ThemeMode {
-    const saved = (localStorage.getItem(this.key) as ThemeMode) || 'dark';
+    const saved = (localStorage.getItem(this.key) as ThemeMode) || 'corporate';
     this.apply(saved);
     return saved;
   }

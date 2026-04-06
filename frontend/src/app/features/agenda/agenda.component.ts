@@ -92,6 +92,21 @@ import { AuthService } from '../../core/services/auth.service';
 
       <!-- FILTERS -->
       <section *ngIf="activeTab==='agenda'">
+      
+      <!-- FILTRO DE PERIODO TEMPORAL -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-r);padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">📅 Periodo:</span>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='all'" (click)="selectedPeriod.set('all');currentPage.set(1)">Todas</button>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='semanal'" (click)="selectedPeriod.set('semanal');currentPage.set(1)">📆 Semanal (7 días)</button>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='quincenal'" (click)="selectedPeriod.set('quincenal');currentPage.set(1)">📆 Quincenal (15 días)</button>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='mensual'" (click)="selectedPeriod.set('mensual');currentPage.set(1)">📆 Mensual (30 días)</button>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='trimestral'" (click)="selectedPeriod.set('trimestral');currentPage.set(1)">📆 Trimestral (90 días)</button>
+          <button class="filter-btn" [class.active]="selectedPeriod()==='anual'" (click)="selectedPeriod.set('anual');currentPage.set(1)">📆 Anual (365 días)</button>
+          <span style="margin-left:auto;font-size:13px;font-weight:600;color:var(--accent);padding:6px 12px;background:rgba(74,222,128,.1);border-radius:6px">{{ periodLabel() }}</span>
+        </div>
+      </div>
+
       <div class="filters">
         <button class="filter-btn" [class.active]="currentFilter() === 'all'" (click)="setFilter('all')">Todas</button>
         <button class="filter-btn" [class.active]="currentFilter() === 'pending'" (click)="setFilter('pending')">⏳ Pendientes</button>
@@ -115,11 +130,22 @@ import { AuthService } from '../../core/services/auth.service';
         </select>
       </div>
 
+      <!-- PAGINATION TABS -->
+      <div *ngIf="totalPages() > 1" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button *ngFor="let page of pageNumbers()" 
+                class="filter-btn" 
+                [class.active]="currentPage() === page"
+                (click)="currentPage.set(page)"
+                style="min-width:40px">
+          Pág {{ page }}
+        </button>
+      </div>
+
       <!-- TABLE -->
       <div class="task-section">
         <div class="task-section-header">
           <span class="task-section-title">Lista de Actividades</span>
-          <span class="task-count">{{ filteredTasks().length }} de {{ tasks().length }} tareas</span>
+          <span class="task-count">{{ paginatedTasks().length }} de {{ filteredTasks().length }} tareas (Página {{ currentPage() }} de {{ totalPages() }})</span>
         </div>
         <table>
           <thead>
@@ -129,12 +155,12 @@ import { AuthService } from '../../core/services/auth.service';
             </tr>
           </thead>
           <tbody>
-            @if (filteredTasks().length === 0) {
+            @if (paginatedTasks().length === 0) {
               <tr><td colspan="6">
                 <div class="empty-state"><div class="icon">📭</div><p>No hay actividades para mostrar</p></div>
               </td></tr>
             }
-            @for (t of filteredTasks(); track t.id) {
+            @for (t of paginatedTasks(); track t.id) {
               <tr class="task-row">
                 <td>
                   <div class="task-name" [class.strikethrough]="t.estado === 'done'">
@@ -498,6 +524,9 @@ export class AgendaComponent implements OnInit {
     currentFilter = signal<string>('all');
     searchTerm = signal<string>('');
     sortBy = signal<string>('date');
+    currentPage = signal<number>(1);
+    itemsPerPage = 25;
+    selectedPeriod = signal<'all'|'semanal'|'quincenal'|'mensual'|'trimestral'|'anual'>('all');
     modalOpen = false;
     editingId: number | null = null;
     form: ActividadRequest & { descripcion?: string } = this.emptyForm();
@@ -510,7 +539,7 @@ export class AgendaComponent implements OnInit {
     urgentMaxItems = signal<number>(5);
     exportEstado = signal<'all'|'done'|'pending'>('all');
     showFloatingAlerts = signal<boolean>(true);
-    currentTheme: ThemeMode = 'dark';
+    currentTheme: ThemeMode = 'corporate';
     // Recurrencia
     isRecurring = false;
     recType: 'mensual' | 'semanal' = 'mensual';
@@ -539,8 +568,47 @@ export class AgendaComponent implements OnInit {
         return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     }
 
+    // Computed para filtrar actividades por periodo de tiempo
+    tasksByPeriod = computed(() => {
+        const period = this.selectedPeriod();
+        if (period === 'all') return this.tasks();
+        
+        const now = new Date();
+        const tasks = this.tasks();
+        
+        return tasks.filter(t => {
+            if (!t.fechaCreacion) return false;
+            const creationDate = new Date(t.fechaCreacion);
+            const diffTime = now.getTime() - creationDate.getTime();
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            
+            switch (period) {
+                case 'semanal': return diffDays <= 7;
+                case 'quincenal': return diffDays <= 15;
+                case 'mensual': return diffDays <= 30;
+                case 'trimestral': return diffDays <= 90;
+                case 'anual': return diffDays <= 365;
+                default: return true;
+            }
+        });
+    });
+
+    periodLabel = computed(() => {
+        const period = this.selectedPeriod();
+        const count = this.tasksByPeriod().length;
+        switch (period) {
+            case 'semanal': return `${count} actividades generadas esta semana`;
+            case 'quincenal': return `${count} actividades generadas en los últimos 15 días`;
+            case 'mensual': return `${count} actividades generadas este mes`;
+            case 'trimestral': return `${count} actividades generadas este trimestre`;
+            case 'anual': return `${count} actividades generadas este año`;
+            default: return `${count} actividades en total`;
+        }
+    });
+
     filteredTasks = computed(() => {
-        let list = this.tasks();
+        // Aplicar primero el filtro de periodo temporal
+        let list = this.tasksByPeriod();
         const cf = this.currentFilter();
         const sa = this.selectedArea();
         const sp = this.selectedPriority();
@@ -557,13 +625,45 @@ export class AgendaComponent implements OnInit {
             const s = st.toLowerCase();
             list = list.filter(t => (t.nombre + ' ' + (t.descripcion || '') + ' ' + t.area).toLowerCase().includes(s));
         }
+        
+        // Ordenamiento especial: pendientes arriba, completadas abajo, más recientes primero en cada grupo
+        const pending = list.filter(t => t.estado !== 'done');
+        const completed = list.filter(t => t.estado === 'done');
+        
+        // Ordenar pendientes por fecha límite (más recientes primero = fechas más cercanas)
+        pending.sort((a, b) => new Date(b.fechaLimite).getTime() - new Date(a.fechaLimite).getTime());
+        
+        // Ordenar completadas por fecha de finalización (más recientes primero)
+        completed.sort((a, b) => {
+            const dateA = a.fechaFinalizacion ? new Date(a.fechaFinalizacion).getTime() : new Date(a.fechaLimite).getTime();
+            const dateB = b.fechaFinalizacion ? new Date(b.fechaFinalizacion).getTime() : new Date(b.fechaLimite).getTime();
+            return dateB - dateA;
+        });
+        
+        // Si el usuario seleccionó un ordenamiento específico, aplicarlo dentro de cada grupo
         const ord: Record<string, number> = { alta: 0, media: 1, baja: 2 };
-        switch (sb) {
-            case 'date': return [...list].sort((a, b) => new Date(a.fechaLimite).getTime() - new Date(b.fechaLimite).getTime());
-            case 'priority': return [...list].sort((a, b) => ord[a.prioridad] - ord[b.prioridad]);
-            case 'name': return [...list].sort((a, b) => a.nombre.localeCompare(b.nombre));
-            default: return list;
+        if (sb === 'priority') {
+            pending.sort((a, b) => ord[a.prioridad] - ord[b.prioridad]);
+            completed.sort((a, b) => ord[a.prioridad] - ord[b.prioridad]);
+        } else if (sb === 'name') {
+            pending.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            completed.sort((a, b) => a.nombre.localeCompare(b.nombre));
         }
+        
+        return [...pending, ...completed];
+    });
+
+    totalPages = computed(() => Math.ceil(this.filteredTasks().length / this.itemsPerPage));
+
+    paginatedTasks = computed(() => {
+        const start = (this.currentPage() - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return this.filteredTasks().slice(start, end);
+    });
+
+    pageNumbers = computed(() => {
+        const total = this.totalPages();
+        return Array.from({ length: total }, (_, i) => i + 1);
     });
 
     constructor(
@@ -608,7 +708,10 @@ export class AgendaComponent implements OnInit {
         }, error: () => this.toast.show('Error cargando áreas', 'error') });
     }
 
-    setFilter(f: string) { this.currentFilter.set(f); }
+    setFilter(f: string) { 
+        this.currentFilter.set(f); 
+        this.currentPage.set(1); // Reset a página 1 al cambiar filtro
+    }
 
     completar(id: number) {
         this.svc.completar(id).subscribe({ next: () => { this.load(); this.toast.show('✅ Actividad completada', 'success'); }, error: () => this.toast.show('Error al completar', 'error') });

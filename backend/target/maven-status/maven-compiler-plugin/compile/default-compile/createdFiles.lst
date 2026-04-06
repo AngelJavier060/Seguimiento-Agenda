@@ -9,6 +9,7 @@ com\agenda\backend\service\ExportService.class
 com\agenda\backend\controller\DiagnosticoController.class
 com\agenda\backend\entity\Actividad$ActividadBuilder.class
 com\agenda\backend\AgendaBackendApplication$1.class
+com\agenda\backend\entity\Actividad$TipoRecurrencia.class
 com\agenda\backend\entity\Actividad$Prioridad.class
 com\agenda\backend\entity\Usuario$UsuarioBuilder.class
 com\agenda\backend\entity\AreaCategoria$AreaCategoriaBuilder.class
@@ -42,6 +43,7 @@ com\agenda\backend\dto\AuthResponse.class
 com\agenda\backend\entity\TelegramUserConfig.class
 com\agenda\backend\repository\SystemConfigRepository.class
 com\agenda\backend\entity\TelegramUserConfig$TelegramUserConfigBuilder.class
+com\agenda\backend\service\N8nWebhookService.class
 com\agenda\backend\config\WebConfig.class
 com\agenda\backend\controller\AuthController.class
 com\agenda\backend\controller\ReporteController.class

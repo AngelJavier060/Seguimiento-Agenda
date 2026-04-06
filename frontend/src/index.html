@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <script id="tailwind-config">
     tailwind = window.tailwind || {};
@@ -18,9 +19,58 @@
             primary: '#137fec',
             'background-light': '#f6f7f8',
             'background-dark': '#101922',
+            'tertiary-fixed-dim': '#ffb68a',
+            'primary-fixed-dim': '#72d6dc',
+            'surface-tint': '#72d6dc',
+            'surface-container-highest': '#333535',
+            'inverse-surface': '#e2e2e2',
+            surface: '#121414',
+            'surface-container': '#1e2020',
+            secondary: '#a9cdcf',
+            error: '#ffb4ab',
+            'on-surface-variant': '#bdc9c9',
+            'on-tertiary-fixed-variant': '#723607',
+            'on-tertiary': '#522300',
+            'on-secondary-fixed': '#002021',
+            'on-secondary-fixed-variant': '#2a4c4e',
+            tertiary: '#ffb68a',
+            'on-primary': '#003739',
+            background: '#121414',
+            'on-tertiary-fixed': '#321300',
+            'on-tertiary-container': '#481e00',
+            'primary-fixed': '#8ff2f8',
+            'on-error-container': '#ffdad6',
+            outline: '#879393',
+            'secondary-fixed-dim': '#a9cdcf',
+            'surface-container-high': '#282a2a',
+            'tertiary-container': '#cc7e4b',
+            'secondary-container': '#2c4f51',
+            'on-primary-fixed-variant': '#004f53',
+            'on-primary-fixed': '#002021',
+            'tertiary-fixed': '#ffdbc8',
+            'surface-variant': '#333535',
+            'primary-container': '#339fa5',
+            'on-surface': '#e2e2e2',
+            'on-error': '#690005',
+            'outline-variant': '#3e4949',
+            'on-background': '#e2e2e2',
+            'surface-container-low': '#1a1c1c',
+            'surface-dim': '#121414',
+            'inverse-on-surface': '#2f3131',
+            'on-secondary': '#113538',
+            'surface-bright': '#383939',
+            'on-primary-container': '#002f32',
+            'inverse-primary': '#00696e',
+            'on-secondary-container': '#9bbfc1',
+            'surface-container-lowest': '#0d0f0f',
+            'secondary-fixed': '#c4e9ec',
+            'error-container': '#93000a',
           },
           fontFamily: {
             display: ['Inter', 'sans-serif'],
+            headline: ['Manrope'],
+            body: ['Inter'],
+            label: ['Inter'],
           },
           borderRadius: {
             DEFAULT: '0.25rem',
@@ -61,6 +111,18 @@
     }
     body { font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: #e2e8f0; }
     html[data-theme='light'] body { color: #0f172a; }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #72d6dc 0%, #339fa5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .mask-fade-bottom {
+      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    }
 
     /* ── CORPORATE THEME (Air Force Blue / Cambridge Green) ── */
     :root[data-theme='corporate'] {
